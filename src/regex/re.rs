@@ -14,7 +14,13 @@ pub fn pderiv(r:&RE, l:&char) -> Vec<RE> {
             if l == m { Vec::from([RE::Eps])} else { Vec::new() }
         }
         RE::Seq(r1, r2) => { 
-            Vec::new() // fixme
+            let ts = pderiv(r1,l);
+            let r = Vec::new();
+            for t in &ts {
+                r.push(RE::Seq(t,r2));
+            };
+            r
+            // Vec::new() // fixme
         }
         RE::Choice(r1,r2) => {
             Vec::new() // fixme
