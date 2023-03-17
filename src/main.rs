@@ -4,7 +4,7 @@ fn main() {
 }
 */
 
-use std::io;
+// use std::io;
 
 /* fn main() {
 x    println!("Guess the number!");
@@ -25,7 +25,6 @@ x    println!("Guess the number!");
 
 }
 
-*/
 
 fn foo() {
     let mut x = String::from("hello");
@@ -61,4 +60,9 @@ struct Another;
 fn main() {
     let x = AlwaysEqual;
     let y = AlwaysEqual;
+}
+*/
+
+fn main() {
+
 }
