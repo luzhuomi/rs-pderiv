@@ -136,6 +136,9 @@ pub fn pderiv(r:&RE, l:&char) -> Vec<Box<RE>> {
     }
 }
 
+/**
+ * using List instead of Vec, but we are not using this.
+ */
 pub fn pderiv_l(r:&RE, l:&char) -> List<RE> {
     match r {
         RE::Phi => List::Nil,

@@ -1,7 +1,9 @@
 use core::ops::*;
 
+// it seems that we don't need this. we used Vec
+
 /** 
- * the RE data type
+ * List Algebraic data type
  */
 #[derive(Debug)]
 pub enum List<T> {

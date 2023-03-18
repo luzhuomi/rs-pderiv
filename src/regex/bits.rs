@@ -78,7 +78,76 @@ pub fn pderiv_bc(r:&RE, l:&char) -> Vec<(RE,BitVec)> {
             let mut vs = pderiv_bc(r2, l);
             ts.append(& mut vs);
             ts
+        },
+        RE::Star(r1) => {
+            let ts = pderiv_bc(r1,l);
+            let mut res = vec![];
+            for (t, bv) in ts {
+                res.push((RE::Seq(Box::new(t), Box::new(r.clone())), bv))
+            }
+            res
         }
-        _ =>    Vec::new()
+    }
+}
+
+
+
+pub fn decode_p<'a>(r:&RE, bs:&'a BitSlice, s:&'a str) -> (U, &'a BitSlice, &'a str) {
+
+    match r {
+        RE::Eps => {
+            (U::NilU, bs, s)
+        },
+        RE::Lit(a) => {
+            (U::LitU(a.clone()), bs, &s[1..])
+        },
+        RE::Choice(r1,r2) => {
+            if bs[0] == false { // it's 0
+                let (u1, bs1, s1) = decode_p(r1, &bs[1..], s);
+                (U::LeftU(Box::new(u1)), bs1, s1)
+            } else {
+                let (u2, bs2, s2) = decode_p(r2, &bs[1..], s);
+                (U::RightU(Box::new(u2)), bs2, s2)
+            }
+        },
+        RE::Seq(r1, r2) => {
+            let (u1, bs1, s1) = decode_p(r1, bs, s);
+            let (u2, bs2, s2) = decode_p(r2, bs1, s1);
+            (U::PairU(Box::new(u1),Box::new(u2)), bs2, s2)
+        },
+        RE::Star(r1) => {
+            if bs[0] == true { // it's 1
+                (U::ListU(vec![]), &bs[1..], s)
+            } else {
+                let (u1, bs1, s1) = decode_p(r1, bs, s);
+                let (u2, bs2, s2) = decode_p(r, bs1, s1);
+                match u2 {
+                    U::ListU(mut us) => {
+                        us.insert(0,u1);
+                        (U::ListU(us), bs2, s2)        
+                    }
+                    _ => panic!("decode_p failed. A non-list parse tree is returned by a Star RE.")
+                }
+            }
+        },
+        RE::Phi => {
+            panic!("decode_p failed. A Phi RE is encountered.")
+        }
+    }
+}
+
+pub fn decode(r:&RE, bs:&BitVec, s:&String) -> U {
+    match decode_p(r, bs.as_bitslice(), s) {
+        (u, bs1, s1) => {
+            if bs1.len() == 0 {
+                if s1.len() == 0 {
+                    u
+                } else {
+                    panic!("decode failed. A non empty string remaind is returned.")
+                }
+            } else {
+                panic!("decode failed. A non empty bit remainder is returned.")
+            }
+        }
     }
 }

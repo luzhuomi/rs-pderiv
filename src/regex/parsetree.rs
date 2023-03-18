@@ -1,11 +1,10 @@
-use super::re::*;
 
 pub enum U {
-    EpsU,
+    NilU,
     LitU(char),
-    Pair(Box<U>,Box<U>),
-    Left(Box<U>),
-    Right(Box<U>),
+    PairU(Box<U>,Box<U>),
+    LeftU(Box<U>),
+    RightU(Box<U>),
     ListU(Vec<U>)
 }
 
