@@ -54,17 +54,47 @@ impl PartialEq for RE {
 impl Eq for RE {
 }
 
-/**
- * test whether a RE is nullable
- */
-pub fn nullable(r:&RE) -> bool {
-    match r {
-        RE::Phi => false,
-        RE::Eps => true,
-        RE::Star(_) => true,
-        RE::Choice(r1,r2) => nullable(r1) || nullable(r2),
-        RE::Seq(r1,r2) => nullable(r1) && nullable(r2),
-        RE::Lit(_) => false
+
+
+impl RE {
+    /**
+     * test whether a RE is nullable
+     */
+    pub fn nullable(&self) -> bool {
+        match self {
+            RE::Phi => false,
+            RE::Eps => true,
+            RE::Star(_) => true,
+            RE::Choice(r1,r2) => r1.nullable() || r2.nullable(),
+            RE::Seq(r1,r2) => r1.nullable() && r2.nullable(),
+            RE::Lit(_) => false
+        }
+    }
+
+    /** 
+     * return the set of characters use in a regex
+     */
+    pub fn sigma(&self) -> HashSet<char> {
+        match self {
+            RE::Phi => HashSet::new(),
+            RE::Eps => HashSet::new(),
+            RE::Lit(c) => { 
+                HashSet::from([*c])
+            }
+            RE::Star(r) => r.sigma(),
+            RE::Choice(r1, r2) => { 
+                let v1 = r1.sigma();
+                let v2 = r2.sigma();
+                let v3: HashSet<_> = v1.union(&v2).map( | c | { *c }).collect();
+                v3
+            },
+            RE::Seq(r1, r2) => {
+                let v1 = r1.sigma();
+                let v2 = r2.sigma();
+                let v3: HashSet<_> = v1.union(&v2).map( | c | { *c }).collect();
+                v3
+            }
+        }
     }
 }
 

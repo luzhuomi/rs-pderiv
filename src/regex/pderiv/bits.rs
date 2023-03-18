@@ -12,12 +12,12 @@ pub fn emp_code(r:&RE) -> BitVec {
     match r {
         RE::Eps => bitvec![],
         RE::Choice(r1,r2) => {
-            if nullable(r1) {
+            if r1.nullable() {
                 let mut bv = emp_code(r1);
                 bv.insert(0,false);
                 bv
             } else { 
-                if nullable(r2) {
+                if r2.nullable() {
                     let mut bv = emp_code(r2);
                     bv.insert(0,true);
                     bv
@@ -51,7 +51,7 @@ pub fn pderiv_bc(r:&RE, l:&char) -> Vec<(RE,BitVec)> {
             }
         },
         RE::Seq(r1, r2) => {
-            if nullable(r1) {
+            if r1.nullable() {
                 let ts = pderiv_bc(r1, l);
                 let vs = pderiv_bc(r2, l);
                 let mut res = vec![];

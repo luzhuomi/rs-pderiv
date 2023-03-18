@@ -20,7 +20,7 @@ pub fn pderiv(r:&RE, l:&char) -> Vec<Box<RE>> {
             }
         }
         RE::Seq(r1, r2) => { 
-            if nullable(r1) {
+            if r1.nullable() {
                 let ts =  pderiv(r1,l);
                 let vs =  pderiv(r2,l);
                 let mut res = vec![];
@@ -76,7 +76,7 @@ pub fn pderiv_l(r:&RE, l:&char) -> List<RE> {
             }
         }, 
         RE::Seq(r1, r2) => {
-            if nullable(r1) {
+            if r1.nullable() {
                 let ts = pderiv_l(r1,l);
                 let ps = ts.map( |t| { RE::Seq(Box::new(t.clone()),r2.clone()) });
                 let vs = pderiv_l(r2, l);
