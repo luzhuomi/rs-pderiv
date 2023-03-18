@@ -1,10 +1,13 @@
 
+use std::collections::HashSet;
+use std::hash::Hash;
 use super::list::*;
 
 /** 
  * the RE data type
  */
 #[derive(Debug)]
+#[derive(Hash)]
 pub enum RE {
     Phi,
     Eps,
@@ -65,6 +68,17 @@ pub fn nullable(r:&RE) -> bool {
     }
 }
 
+pub fn nub_vec<T:Clone+Hash+Eq>(v:&Vec<T>)-> Vec<T> {
+    let mut seen = HashSet::new();
+    let mut res = Vec::new();
+    for x in v.iter() {
+        if !seen.contains(x) { 
+            seen.insert(x);
+            res.push(x.clone());
+        }
+    }
+    res
+}
 
 /**
  * partial derivative operation of a RE, given a letter l
@@ -91,7 +105,7 @@ pub fn pderiv(r:&RE, l:&char) -> Vec<Box<RE>> {
                 for v in vs {
                     res.push(v);
                 }
-                res
+                nub_vec(&res)
 
             } else {
                 let ts = pderiv(r1,l);
@@ -99,7 +113,7 @@ pub fn pderiv(r:&RE, l:&char) -> Vec<Box<RE>> {
                 for t in ts {
                     res.push(Box::new(RE::Seq(t, r2.clone())));
                 };
-                res    
+                nub_vec(&res)    
             }
         }
         RE::Choice(r1,r2) => {
@@ -108,7 +122,7 @@ pub fn pderiv(r:&RE, l:&char) -> Vec<Box<RE>> {
             let mut res = vec![];
             for t in ts { res.push(t) };
             for v in vs { res.push(v) };
-            res
+            nub_vec(&res)
         },
         RE::Star(r1) => {
             let ts = pderiv(r1, l);
@@ -116,7 +130,7 @@ pub fn pderiv(r:&RE, l:&char) -> Vec<Box<RE>> {
             for t in ts {
                 res.push(Box::new(RE::Seq(t, Box::new(r.clone()))));    
             }
-            res
+            nub_vec(&res)
         }
         
     }
