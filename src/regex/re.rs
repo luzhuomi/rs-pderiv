@@ -1,7 +1,7 @@
 
 use std::collections::HashSet;
 use std::hash::Hash;
-use super::list::*;
+//use super::list::*;
 
 /** 
  * the RE data type
