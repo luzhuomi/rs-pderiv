@@ -11,7 +11,7 @@ type Finals = HashMap<RE, BitVec>;
 
 
 /**
- * TODO: check whether the .clones() are necessary
+ * TODO: check whether the .clone()'s are necessary
  */
 pub struct Regex {
     trans:Trans, 

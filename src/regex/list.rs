@@ -24,6 +24,18 @@ pub fn member<T:Eq>(t:&T, l:&List<T>) -> bool {
     }
 }
 
+impl <T:Eq> PartialEq for List<T> {
+    fn eq(&self, other:&Self) -> bool {
+        match (self, other) {
+            (List::Nil,List::Nil) => true,
+            (List::Cons(x,xs), List::Cons(y,ys)) => x == y && xs == ys,
+            (_,_) => false
+        }
+    }
+}
+
+impl <T:Eq> Eq for List<T> { }
+
 impl <T:Eq>List<T> {
     pub fn contains(&self, t:&T) -> bool {
         member(t,self)
