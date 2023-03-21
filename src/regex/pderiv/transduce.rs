@@ -13,8 +13,9 @@ type Finals = HashMap<RE, BitVec>;
 /**
  * TODO: check whether the .clone()'s are necessary
  */
+#[derive(Debug)]
 pub struct Regex {
-    trans:Trans, 
+    pub trans:Trans, 
     init: RE, 
     finals: Finals 
 }
@@ -67,7 +68,7 @@ fn build_fix(all_states_sofar: Vec<RE>, curr_trans:Trans, sig:HashSet<char>) -> 
             };
             acc
         });
-        (all_states_next,next_trans)
+        build_fix(all_states_next,next_trans, sig)
     }
 }
 
@@ -93,7 +94,7 @@ pub fn parse_regex(regex:Regex, s:String) -> Option<BitVec> {
                 if r.nullable() { // finals is useless.
                     let mut bc1 = bc.clone();
                     bc1.extend(emp_code(r));
-                    res.push(bc.clone());
+                    res.push(bc1);
                 } else { // nothing to do here.
                 }
             });
@@ -109,7 +110,8 @@ pub fn parse_regex(regex:Regex, s:String) -> Option<BitVec> {
                 let (r, bc) = rb.clone();
                 let key = (r.clone(),x.clone());
                 match trans.get(&key) {
-                    None => {}
+                    None => {
+                    }
                     Some(tfs) => tfs.iter().for_each(|tb|{
                         let (t, bc1) = tb;
                         let mut bc2 = bc.clone();
