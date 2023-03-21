@@ -74,8 +74,8 @@ pub fn pderiv_bc(r:&RE, l:&char) -> Vec<(RE,BitVec)> {
             }
         },
         RE::Choice(r1,r2) => {
-            let mut ts = pderiv_bc(r1, l);
-            let mut vs = pderiv_bc(r2, l);
+            let ts = pderiv_bc(r1, l);
+            let vs = pderiv_bc(r2, l);
             let mut res = vec![];
             for (t,bv) in ts{
                 let mut bv1 = bv;
