@@ -12,7 +12,7 @@ fn test_parse_aa_a() {
     use RE::*;
     let r = seq!(Lit('a'),Lit('a'));
     let regex = build_regex(&r);
-    let result = parse_regex(regex,String::from("aa"));
+    let result = parse_regex(&regex,&String::from("aa"));
     match result {
         None => assert_eq!(1,2),
         Some(bv) => assert_eq!(bv,bitvec![])
@@ -25,7 +25,7 @@ fn test_parse_star_a_a() {
     use RE::*;
     let r = star!(Lit('a'));
     let regex = build_regex(&r);
-    let result = parse_regex(regex,String::from("aaa"));
+    let result = parse_regex(&regex,&String::from("aaa"));
     match result {
         None => assert_eq!(1,2),
         Some(bv) => {
@@ -44,7 +44,7 @@ fn test_parse_abaac1() {
     let z = choice!(seq!(Lit('a'), Lit('c')), Lit('c')); 
     let r = seq!(seq!(x,y),z);
     let regex = build_regex(&r);
-    let result = parse_regex(regex,String::from("abaac"));
+    let result = parse_regex(&regex,&String::from("abaac"));
     match result {
         None => assert_eq!(1,2),
         Some(bv) => {
@@ -63,7 +63,7 @@ fn test_parse_abaac2() {
     let z = choice!(seq!(Lit('a'), Lit('c')), Lit('c')); 
     let r = seq!(seq!(x,y),z);
     let regex = build_regex(&r);
-    let result = parse_regex(regex,String::from("abaac"));
+    let result = parse_regex(&regex,&String::from("abaac"));
     match result {
         None => assert_eq!(1,2),
         Some(bv) => {

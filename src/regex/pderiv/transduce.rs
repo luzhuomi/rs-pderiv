@@ -85,14 +85,13 @@ pub fn build_regex(r:&RE) -> Regex {
 
 
 
-pub fn parse_regex(regex:Regex, s:String) -> Option<BitVec> {
-    fn go(rbc:Vec<(&RE,BitVec)>, trans:&Trans, finals:Finals, s:&str) -> Vec<BitVec> {
+pub fn parse_regex(regex:&Regex, s:&String) -> Option<BitVec> {
+    fn go<'a>(rbc:Vec<(&RE,BitVec)>, trans:&Trans, finals:&Finals, s:&str) -> Vec<BitVec> {
         if s.len() == 0 {
-            let mut res = vec![];
-            rbc.iter().for_each(|x| {
-                let (r, bc) = x;
+            let mut res:Vec<BitVec> = vec![];
+            rbc.iter().for_each(|(r, bc)| {
                 if r.nullable() { // finals is useless.
-                    let mut bc1 = bc.clone();
+                    let mut bc1 = (*bc).clone();
                     bc1.extend(emp_code(r));
                     res.push(bc1);
                 } else { // nothing to do here.
@@ -105,18 +104,17 @@ pub fn parse_regex(regex:Regex, s:String) -> Option<BitVec> {
                 None => panic!("parse_regex failed, empty string slice with len > 0"),
                 Some(c) => (c,&s[1..])
             };
-            let mut tbc = vec![];
-            rbc.iter().for_each(|rb| {
-                let (r, bc) = rb.clone();
-                let key = (r.clone(),x.clone());
+            let mut tbc:Vec<(&RE, BitVec)> = vec![];
+            rbc.iter().for_each(|(r,bc)| {
+                let key = ((*r).clone(),x.clone());
                 match trans.get(&key) {
                     None => {
                     }
                     Some(tfs) => tfs.iter().for_each(|tb|{
                         let (t, bc1) = tb;
-                        let mut bc2 = bc.clone();
+                        let mut bc2 = (*bc).clone();
                         bc2.extend(bc1);
-                        tbc.push((t,bc2.clone()));
+                        tbc.push((t,bc2));
                     })
                 };
             });
@@ -126,11 +124,12 @@ pub fn parse_regex(regex:Regex, s:String) -> Option<BitVec> {
 
     match regex {
         Regex { trans, init, finals } => {
-            let result =  go(vec![(&init,BitVec::new())], &trans, finals, &s);
+            let result =  go(vec![(&init,BitVec::new())], trans, finals, &s);
             if result.len() == 0 {
                 None
             } else {
-                Some(result[0].clone())
+                let bv: BitVec = (result.clone()[0]).clone();
+                Some(bv)
             }
         }
     }
