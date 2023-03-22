@@ -22,51 +22,51 @@ pub struct Regex {
 
 
 fn build_fix(all_states_sofar: Vec<RE>, curr_trans:Trans, sig:HashSet<char>) -> (Vec<RE>, Trans) {
-    let new_delta_it = all_states_sofar.iter().map(
+    let new_delta = all_states_sofar.iter().map(
         |r| {
             let e = sig.iter().map(move |l| {
-                let rp = r.clone();
-                let tfs = pderiv_bc(&rp, l);
-                let tfdelta = tfs.iter().map(
+                let tfs = pderiv_bc(r, l);
+                let tfdelta = tfs.into_iter().map(
                     |tbc | {
-                        let (t,bc) = tbc;
-                        (r,l.clone(),t.clone(),bc.clone())
+                        let (t,bv) = tbc;
+                        (r.clone(),*l,t, bv)
                     }
                 );
                 tfdelta.collect::<Vec<_>>()
             });
             e
+        }).fold(vec![], |acc, it| {
+            it.fold(acc, |acc2, i|{
+                i.into_iter().fold(acc2, |mut acc3, (src, c, dst, bv)| {
+                    if !(curr_trans.contains_key(&(src.clone(),c))) {
+                        acc3.push((src,c,dst,bv));
+                    }
+                    acc3
+                })
+            })
+           
         });
-    let new_delta :Vec<_>= new_delta_it.fold(vec![], |mut v, it| {
-        for i in it {
-            for j in i.iter() {
-                if !curr_trans.contains_key(&(j.0.clone(),j.1)) {
-                    v.push(j.clone())
-                }
-            }
-        }
-        v
-    });
     if new_delta.len() == 0 {
         (all_states_sofar, curr_trans)
     } else {
-        let mut all_states_next = all_states_sofar.clone();
-        new_delta.iter().fold(& mut all_states_next, |acc, t| {
+        let all_states_next = new_delta.iter().fold(all_states_sofar, |mut acc, t| {
             acc.push(t.2.clone());
             acc
         });
-        let mut next_trans = curr_trans.clone();
-        new_delta.iter().fold(& mut next_trans, |acc, t| {
-            let key = (t.0.clone(), t.1);
-            let _ = match acc.get(&key) {
-                None => acc.insert(key, vec![(t.2.clone(),t.3.clone())]),
-                Some(vec1) => {
-                    let mut vec2 = vec1.clone();
-                    vec2.push((t.2.clone(),t.3.clone()));
-                    acc.insert(key, vec2)
+        let next_trans = new_delta.into_iter().fold(curr_trans, |mut acc, t| {
+            let (src, c, dst, bv) = t;
+            let key = (src.clone(), c.clone()); 
+            match acc.get_mut(&key) {
+                None => {
+                    acc.insert(key, vec![(dst.clone(),bv.clone())]);
+                    acc
                 }
-            };
-            acc
+                Some(vec1) => {
+                    vec1.push((dst.clone(),bv.clone()));
+                    // acc.insert(key, vec1) // no need?
+                    acc
+                }
+            }
         });
         build_fix(all_states_next,next_trans, sig)
     }
