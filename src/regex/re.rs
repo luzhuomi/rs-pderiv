@@ -26,6 +26,7 @@ pub(crate) use seq;
 pub(crate) use star; 
 pub(crate) use choice; 
 
+
 /** 
  * the RE data type
  */

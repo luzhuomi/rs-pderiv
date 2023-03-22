@@ -77,6 +77,8 @@ fn main() {
 
 */
 
+
+/*
 fn main() {
     let list = vec![1,2,3];
     println!("Before defining closure: {:?}", list);
@@ -92,4 +94,50 @@ fn main() {
     };
     let list2 = borrow_and_move(list);
     println!("After calling closure: {:?}", list2);
+}
+*/
+use std::{env, fs};
+use rs_pderiv::regex::re::*;
+use rs_pderiv::regex::pderiv::transduce::*;
+fn main() {
+    let args: Vec<String> = env::args().collect();
+    dbg!(&args);
+
+    match (&args.get(1), &args.get(2)) {
+        (Some(n_str), Some(file_path)) => {
+            let r = generate_re(n_str);
+            let regex = build_regex(&r);
+            let contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
+            dbg!(r);
+            match parse_regex(&regex, &contents) {
+                None => println!("match failed."),
+                Some(x) => println!("{:?}", x)
+            }
+        },
+        _ => println!("usage: cargo run <num> <filename>")
+    }
+   
+}
+
+fn generate_re(n_arg:&String) -> RE {
+    let n = n_arg.parse::<i32>().unwrap();
+    mkpat(n)
+}
+
+fn mkpat(n:i32) -> RE {
+    use RE::*;
+    if n > 0 {
+        let j = n-1;
+        let r = RE::Choice(Box::new(Lit('a')), Box::new(Eps));
+        let fst = (0..j).into_iter().fold(r.clone(), |acc,_i| {
+            RE::Seq(Box::new(acc),Box::new(r.clone()))
+        });
+        let t = RE::Lit('a');
+        let snd = (0..j).into_iter().fold(t.clone(), |acc,_i| {
+            RE::Seq(Box::new(acc),Box::new(t.clone()))
+        });
+        RE::Seq(Box::new(fst),Box::new(snd))
+    } else {
+        RE::Phi
+    }
 }
