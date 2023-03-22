@@ -74,16 +74,28 @@ pub fn pderiv_bc(r:&RE, l:&char) -> Vec<(RE,BitVec)> {
             }
         },
         RE::Choice(r1,r2) => {
-            let mut ts = pderiv_bc(r1, l);
-            let mut vs = pderiv_bc(r2, l);
-            ts.append(& mut vs);
-            ts
+            let ts = pderiv_bc(r1, l);
+            let vs = pderiv_bc(r2, l);
+            let mut res = vec![];
+            for (t,bv) in ts{
+                let mut bv1 = bv;
+                bv1.insert(0, false);
+                res.push((t, bv1))
+            }
+            for (v, bu) in vs {
+                let mut bu1 = bu;
+                bu1.insert(0, true);
+                res.push((v, bu1));
+            }
+            res
         },
         RE::Star(r1) => {
             let ts = pderiv_bc(r1,l);
             let mut res = vec![];
             for (t, bv) in ts {
-                res.push((RE::Seq(Box::new(t), Box::new(r.clone())), bv))
+                let mut bv1 = bv;
+                bv1.insert(0, false);
+                res.push((RE::Seq(Box::new(t), Box::new(r.clone())), bv1))
             }
             res
         }

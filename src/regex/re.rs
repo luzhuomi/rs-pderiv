@@ -3,6 +3,29 @@ use std::collections::HashSet;
 use std::hash::Hash;
 //use super::list::*;
 
+macro_rules! seq{
+    ($a:expr, $b:expr) => { 
+        RE::Seq(Box::new($a), Box::new($b))
+    }
+}
+
+macro_rules! star{
+    ($a:expr) => { 
+        RE::Star(Box::new($a))
+    }
+}
+
+
+macro_rules! choice{
+    ($a:expr, $b:expr) => { 
+        RE::Choice(Box::new($a), Box::new($b))
+    }
+}
+
+pub(crate) use seq; 
+pub(crate) use star; 
+pub(crate) use choice; 
+
 /** 
  * the RE data type
  */
