@@ -20,6 +20,13 @@ pub struct Regex {
     finals: Finals 
 }
 
+/**
+ * for debugging purpose
+ */
+pub fn cnt(regex:&Regex)-> usize {
+    regex.trans.len()
+}
+
 
 fn build_fix(all_states_sofar: Vec<RE>, curr_trans:Trans, sig:HashSet<char>) -> (Vec<RE>, Trans) {
     let new_delta = all_states_sofar.iter().map(

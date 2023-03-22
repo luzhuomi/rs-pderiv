@@ -106,13 +106,15 @@ fn main() {
     match (&args.get(1), &args.get(2)) {
         (Some(n_str), Some(file_path)) => {
             let r = generate_re(n_str);
+            dbg!(&r);
             let regex = build_regex(&r);
+            println!("built: {}", cnt(&regex));
+            /* 
             let contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
-            dbg!(r);
             match parse_regex(&regex, &contents) {
                 None => println!("match failed."),
                 Some(x) => println!("{:?}", x)
-            }
+            }*/
         },
         _ => println!("usage: cargo run <num> <filename>")
     }
