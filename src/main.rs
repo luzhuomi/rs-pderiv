@@ -63,6 +63,33 @@ fn main() {
 }
 */
 
+/* 
 fn main() {
+    let mut list = vec![1, 2, 3];
+    println!("Before defining closure: {:?}", list);
 
+    let mut borrows_mutably =  || list.push(7);
+
+    borrows_mutably();
+    borrows_mutably();
+    println!("After calling closure: {:?}", list);
+}
+
+*/
+
+fn main() {
+    let list = vec![1,2,3];
+    println!("Before defining closure: {:?}", list);
+
+    fn borrow_and_move (mut x:Vec<i32>)->Vec<i32>  {
+        if x.len() > 5 {
+            println!("here");
+            x
+        } else {
+            x.push(7);
+            borrow_and_move(x)
+        }
+    };
+    let list2 = borrow_and_move(list);
+    println!("After calling closure: {:?}", list2);
 }
