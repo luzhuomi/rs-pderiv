@@ -29,8 +29,6 @@ pub fn cnt(regex:&Regex)-> usize {
 
 
 fn build_fix(all_states_sofar: HashSet<RE>, curr_trans:Trans, sig:HashSet<char>) -> (HashSet<RE>, Trans) {
-    // dbg!(all_states_sofar.clone().len());
-    // dbg!(curr_trans.clone().len());
     let mut new_delta = all_states_sofar.iter().flat_map(
         |r| {
             let e = sig.iter().filter(|l| {
@@ -38,7 +36,6 @@ fn build_fix(all_states_sofar: HashSet<RE>, curr_trans:Trans, sig:HashSet<char>)
                 !(curr_trans.contains_key(&key))
             }).flat_map(move |l| {
                 let tfs = pderiv_bc(r, l);
-                // println!("{:?}{:?}",r,l);
                 if tfs.len() == 0 {
                     None
                 } else {
@@ -48,32 +45,25 @@ fn build_fix(all_states_sofar: HashSet<RE>, curr_trans:Trans, sig:HashSet<char>)
             });
             e
         }).peekable();
-    if new_delta.peek().is_none() { // lowerbound is 0
+    if new_delta.peek().is_none() { 
         (all_states_sofar, curr_trans)
     } else {
-        let new_trans :Trans = curr_trans.clone() ;
-        let (next_states, next_trans) = new_delta
+        let mut new_trans :Trans = curr_trans.clone();
+        let (mut next_states, next_trans) = new_delta
             .fold((HashSet::new(), new_trans), |acc, t| {
-                // let (states_sofar, trans) = acc;
+                let (states_sofar, mut trans) = acc;
                 let (src, c, dstbvs) = t;
-                dstbvs.fold(acc, |(mut states_sofar, mut trans), s| {
-                    let (dst, bv) = s;
-                    let _inserted = states_sofar.insert(dst.clone());
-                    let key = (src.clone(), *c);
-                    match trans.get_mut(&key) {
-                        None => {
-                            trans.insert(key, vec![(dst, bv)]);
-                            ()
-                        }
-                        Some(dstbv1) => dstbv1.push((dst, bv))
-                    };
-                    (states_sofar,trans)
-                })
+                let key = (src.clone(), *c);
+                let states_out = dstbvs.clone().fold(states_sofar, |mut states, s| {
+                    let (dst, _bv) = s;
+                    let _inserted = states.insert(dst);
+                    states
+                });
+                trans.insert(key, dstbvs.collect());
+                (states_out, trans)
         });
-        // dbg!(next_states.clone().len());
-        let mut ns = next_states;
-        ns.extend(all_states_sofar);
-        build_fix(ns,next_trans, sig)
+        next_states.extend(all_states_sofar); // todo check why all_states_sofar can't be use as the init of next_states fold.
+        build_fix(next_states,next_trans, sig)
     }
 }
 
