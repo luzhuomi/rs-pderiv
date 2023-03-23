@@ -28,60 +28,58 @@ pub fn cnt(regex:&Regex)-> usize {
 }
 
 
-fn build_fix(all_states_sofar: Vec<RE>, curr_trans:Trans, sig:HashSet<char>) -> (Vec<RE>, Trans) {
-    let new_delta = all_states_sofar.iter().map(
+fn build_fix(all_states_sofar: HashSet<RE>, curr_trans:Trans, sig:HashSet<char>) -> (HashSet<RE>, Trans) {
+    // dbg!(all_states_sofar.clone().len());
+    // dbg!(curr_trans.clone().len());
+    let mut new_delta = all_states_sofar.iter().flat_map(
         |r| {
-            let e = sig.iter().map(move |l| {
+            let e = sig.iter().filter(|l| {
+                let key = (r.clone(), **l);
+                !(curr_trans.contains_key(&key))
+            }).flat_map(move |l| {
                 let tfs = pderiv_bc(r, l);
-                let tfdelta = tfs.into_iter().map(
-                    |tbc | {
-                        let (t,bv) = tbc;
-                        (r.clone(),*l,t, bv)
-                    }
-                );
-                tfdelta.collect::<Vec<_>>()
+                // println!("{:?}{:?}",r,l);
+                if tfs.len() == 0 {
+                    None
+                } else {
+                    let tfdelta = tfs.into_iter();
+                    Some((r,l,tfdelta))    
+                }
             });
             e
-        }).fold(vec![], |acc, it| {
-            it.fold(acc, |acc2, i|{
-                i.into_iter().fold(acc2, |mut acc3, (src, c, dst, bv)| {
-                    if !(curr_trans.contains_key(&(src.clone(),c))) {
-                        acc3.push((src,c,dst,bv));
-                    }
-                    acc3
-                })
-            })
-           
-        });
-    if new_delta.len() == 0 {
+        }).peekable();
+    if new_delta.peek().is_none() { // lowerbound is 0
         (all_states_sofar, curr_trans)
     } else {
-        let all_states_next = new_delta.iter().fold(all_states_sofar, |mut acc, t| {
-            acc.push(t.2.clone());
-            acc
+        let new_trans :Trans = curr_trans.clone() ;
+        let (next_states, next_trans) = new_delta
+            .fold((HashSet::new(), new_trans), |acc, t| {
+                // let (states_sofar, trans) = acc;
+                let (src, c, dstbvs) = t;
+                dstbvs.fold(acc, |(mut states_sofar, mut trans), s| {
+                    let (dst, bv) = s;
+                    let _inserted = states_sofar.insert(dst.clone());
+                    let key = (src.clone(), *c);
+                    match trans.get_mut(&key) {
+                        None => {
+                            trans.insert(key, vec![(dst, bv)]);
+                            ()
+                        }
+                        Some(dstbv1) => dstbv1.push((dst, bv))
+                    };
+                    (states_sofar,trans)
+                })
         });
-        let next_trans = new_delta.into_iter().fold(curr_trans, |mut acc, t| {
-            let (src, c, dst, bv) = t;
-            let key = (src.clone(), c.clone()); 
-            match acc.get_mut(&key) {
-                None => {
-                    acc.insert(key, vec![(dst.clone(),bv.clone())]);
-                    acc
-                }
-                Some(vec1) => {
-                    vec1.push((dst.clone(),bv.clone()));
-                    // acc.insert(key, vec1) // no need?
-                    acc
-                }
-            }
-        });
-        build_fix(all_states_next,next_trans, sig)
+        // dbg!(next_states.clone().len());
+        let mut ns = next_states;
+        ns.extend(all_states_sofar);
+        build_fix(ns,next_trans, sig)
     }
 }
 
 pub fn build_regex(r:&RE) -> Regex {
     let sig = r.sigma();
-    let init_states = vec![r.clone()];
+    let init_states = vec![r.clone()].into_iter().collect();
     let (all_states, trans) = build_fix(init_states, HashMap::new(), sig);
     let fins = all_states.iter().filter(|r|{r.nullable()}).map(|r|{
         (r.clone(), emp_code(r))
