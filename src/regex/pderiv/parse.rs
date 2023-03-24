@@ -1,6 +1,5 @@
 
 use intmap::IntMap;
-use std::num::Wrapping;
 use std::collections::HashSet;
 use bitvec::prelude::*;
 use super::super::re::*;
@@ -8,7 +7,7 @@ use super::bits::*;
 // use super::parsetree::*;
 
 type Trans = IntMap<Vec<(u64, BitVec)>>;
-type RMap  = IntMap<RE>; // u64 -> RE reverse mapping
+// type RMap  = IntMap<RE>; // u64 -> RE reverse mapping
 type Finals = IntMap<BitVec>;
 
 
@@ -111,16 +110,16 @@ pub fn parse_regex(regex:&Regex, s:&String) -> Option<BitVec> {
                 Some(c) => (c,&s[1..])
             };
             let mut tbc:Vec<(u64, BitVec)> = vec![];
-            rbc.iter().for_each(|(r,bc)| {
+            rbc.into_iter().for_each(|(r,bc)| {
                 let hash_r = r;
                 let hash_x = calculate_hash(x);
-                let key = hash2(hash_r, &hash_x);
+                let key = hash2(&hash_r, &hash_x);
                 match trans.get(key) {
                     None => {
                     }
                     Some(tfs) => tfs.iter().for_each(|tb|{
                         let (t, bc1) = tb;
-                        let mut bc2 = (*bc).clone();
+                        let mut bc2 = bc.clone();
                         bc2.extend(bc1);
                         tbc.push((*t,bc2));
                     })
