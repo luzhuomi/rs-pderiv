@@ -137,6 +137,23 @@ pub fn nub_vec<T:Clone+Hash+Eq>(v:&Vec<T>)-> Vec<T> {
 }
 
 
+pub fn nub_vec_fst<T:Clone+Hash+Eq, S>(v:Vec<(T,S)>)-> Vec<(T,S)> {
+    let empty_seen = HashSet::new();
+    let empty_res = Vec::new();
+    let (seen, res) = v.into_iter().fold( (empty_seen, empty_res), | (mut seen,mut res), (t,s)|
+        {
+            if !seen.contains(&t) { 
+                seen.insert(t.clone());
+                res.push((t,s));
+                (seen, res)    
+            } else {
+                (seen, res)
+            }
+        });
+    res
+}
+
+
 // let's use the default hasher
 pub fn calculate_hash<T: Hash>(t: &T) -> u64 {
     let mut s = DefaultHasher::new();

@@ -63,7 +63,7 @@ pub fn pderiv_bc(r:&RE, l:&char) -> Vec<(RE,BitVec)> {
                     emp.append(& mut bu);                    
                     res.push((v, emp));
                 }
-                res
+                nub_vec_fst(res)
             } else {
                 let ts = pderiv_bc(r1, l);
                 let mut res = vec![];
@@ -87,7 +87,7 @@ pub fn pderiv_bc(r:&RE, l:&char) -> Vec<(RE,BitVec)> {
                 bu1.insert(0, true);
                 res.push((v, bu1));
             }
-            res
+            nub_vec_fst(res)
         },
         RE::Star(r1) => {
             let ts = pderiv_bc(r1,l);
