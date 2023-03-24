@@ -1,6 +1,7 @@
 pub mod bits;
 pub mod parsetree;
 pub mod transduce;
+pub mod parse;
 
 
 use super::list::*;

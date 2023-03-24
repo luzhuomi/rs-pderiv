@@ -98,30 +98,31 @@ fn main() {
 */
 use std::{env, fs};
 use rs_pderiv::regex::re::*;
-use rs_pderiv::regex::pderiv::transduce::*;
+use rs_pderiv::regex::pderiv::parse::*;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
-
 
 fn main() {
     
     let args: Vec<String> = env::args().collect();
-    dbg!(&args);
+    // dbg!(&args);
 
     match (&args.get(1), &args.get(2)) {
         (Some(n_str), Some(file_path)) => {
             let r = generate_re(n_str);
-            dbg!(&r);
+            // dbg!(&r);
             dbg!(calculate_hash(&r));
             dbg!(calculate_hash(&calculate_hash(&r)));
             let regex = build_regex(&r);
             // println!("built: {}", cnt(&regex));
-            /* 
-            let contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
+            
+            let mut contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
+            contents.pop();
+            dbg!(contents.len());
             match parse_regex(&regex, &contents) {
                 None => println!("match failed."),
                 Some(x) => println!("{:?}", x)
-            }*/
+            }
         },
         _ => println!("usage: cargo run <num> <filename>")
     }

@@ -1,7 +1,9 @@
 
 use std::collections::HashSet;
-use std::hash::Hash;
 //use super::list::*;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+use std::num::Wrapping;
 
 macro_rules! seq{
     ($a:expr, $b:expr) => { 
@@ -134,3 +136,15 @@ pub fn nub_vec<T:Clone+Hash+Eq>(v:&Vec<T>)-> Vec<T> {
     res
 }
 
+
+// let's use the default hasher
+pub fn calculate_hash<T: Hash>(t: &T) -> u64 {
+    let mut s = DefaultHasher::new();
+    t.hash(&mut s);
+    s.finish()
+}
+
+pub fn hash2(x:&u64, y:&u64) -> u64 {
+    let f:u64 = 256;
+    (Wrapping(*x) * Wrapping(f) + Wrapping(*y)).0
+}
