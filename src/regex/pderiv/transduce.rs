@@ -48,7 +48,7 @@ fn build_fix(all_states_sofar: HashSet<RE>, curr_trans:Trans, sig:HashSet<char>)
     if new_delta.peek().is_none() { 
         (all_states_sofar, curr_trans)
     } else {
-        let mut new_trans :Trans = curr_trans.clone();
+        let new_trans :Trans = curr_trans.clone();
         let (mut next_states, next_trans) = new_delta
             .fold((HashSet::new(), new_trans), |acc, t| {
                 let (states_sofar, mut trans) = acc;
