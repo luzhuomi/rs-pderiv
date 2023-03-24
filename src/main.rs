@@ -99,7 +99,12 @@ fn main() {
 use std::{env, fs};
 use rs_pderiv::regex::re::*;
 use rs_pderiv::regex::pderiv::transduce::*;
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+
+
 fn main() {
+    
     let args: Vec<String> = env::args().collect();
     dbg!(&args);
 
@@ -107,8 +112,10 @@ fn main() {
         (Some(n_str), Some(file_path)) => {
             let r = generate_re(n_str);
             dbg!(&r);
+            dbg!(calculate_hash(&r));
+            dbg!(calculate_hash(&calculate_hash(&r)));
             let regex = build_regex(&r);
-            println!("built: {}", cnt(&regex));
+            // println!("built: {}", cnt(&regex));
             /* 
             let contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
             match parse_regex(&regex, &contents) {
@@ -142,4 +149,11 @@ fn mkpat(n:i32) -> RE {
     } else {
         RE::Phi
     }
+}
+
+
+fn calculate_hash<T: Hash>(t: &T) -> u64 {
+    let mut s = DefaultHasher::new();
+    t.hash(&mut s);
+    s.finish()
 }
