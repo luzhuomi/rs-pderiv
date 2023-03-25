@@ -78,6 +78,7 @@ fn main() {
 */
 
 
+
 /*
 fn main() {
     let list = vec![1,2,3];
@@ -96,6 +97,7 @@ fn main() {
     println!("After calling closure: {:?}", list2);
 }
 */
+use std::time::{Duration, SystemTime};
 use std::{env, fs};
 use rs_pderiv::regex::re::*;
 use rs_pderiv::regex::pderiv::parse::*;
@@ -103,7 +105,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
 fn main() {
-    
+    let time0 = SystemTime::now();
     let args: Vec<String> = env::args().collect();
     // dbg!(&args);
 
@@ -115,14 +117,17 @@ fn main() {
             dbg!(calculate_hash(&calculate_hash(&r)));
             let regex = build_regex(&r);
             // println!("built: {}", cnt(&regex));
-            
+            let time1 = SystemTime::now();
+            println!("{:#?}", time1.duration_since(time0));
             let mut contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
             contents.pop();
             dbg!(contents.len());
             match parse_regex(&regex, &contents) {
                 None => println!("match failed."),
                 Some(x) => println!("{:?}", x)
-            }
+            };
+            let time2 = SystemTime::now();
+            println!("{:#?}", time2.duration_since(time1));
         },
         _ => println!("usage: cargo run <num> <filename>")
     }
@@ -147,6 +152,7 @@ fn mkpat(n:i32) -> RE {
             RE::Seq(Box::new(acc),Box::new(t.clone()))
         });
         RE::Seq(Box::new(fst),Box::new(snd))
+        // RE::Seq(Box::new(snd),Box::new(fst))
     } else {
         RE::Phi
     }
