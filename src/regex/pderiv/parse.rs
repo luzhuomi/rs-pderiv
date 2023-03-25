@@ -86,14 +86,12 @@ pub fn build_regex(r:&RE) -> Regex {
 }
 
 
-
-
 pub fn parse_regex(regex:&Regex, s:&String) -> Option<BitVec> {
     fn go<'a>(rbc:Vec<(u64,BitVec)>, trans:&Trans, finals:&Finals, s:&str) -> Vec<BitVec> {
         if s.len() == 0 {
             let mut res:Vec<BitVec> = vec![];
-            rbc.iter().for_each(|(r, bc)| {
-                match finals.get(*r) {
+            rbc.into_iter().for_each(|(r, bc)| {
+                match finals.get(r) {
                     None => {}
                     Some(bc1) => {
                         let mut bc2 = bc.clone();
@@ -117,7 +115,7 @@ pub fn parse_regex(regex:&Regex, s:&String) -> Option<BitVec> {
                 match trans.get(key) {
                     None => {
                     }
-                    Some(tfs) => tfs.iter().for_each(|tb|{
+                    Some(tfs) => tfs.into_iter().for_each(|tb|{
                         let (t, bc1) = tb;
                         let mut bc2 = bc.clone();
                         bc2.extend(bc1);
