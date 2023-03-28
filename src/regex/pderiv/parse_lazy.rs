@@ -227,7 +227,7 @@ impl Regex {
                 }
             });
             let c = tbc.into_iter();
-            mrbc = CoerceIterator::FromIterator(Rc::new(c)); // fixme
+            mrbc = CoerceIterator::FromIterator(Rc::new(c)); // fixme: how to ndeduplicate this?
             ms = xs;
         }
         let f = |(r, bc):(u64, BitVec)| -> Option<BitVec> {
