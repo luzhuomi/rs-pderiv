@@ -125,6 +125,7 @@ impl <'a> Regex<'a> {
                         })
                     };
                 });
+                tbc = nub_vec_fst(tbc);
                 go(tbc, trans, finals, xs)
             }
         }
