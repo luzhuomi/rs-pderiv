@@ -122,7 +122,7 @@ fn main() {
             let mut contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
             contents.pop();
             dbg!(contents.len());
-            match parse_regex(&regex, &contents) {
+            match regex.parse_regex(&contents) {
                 None => println!("match failed."),
                 Some(x) => println!("{:?}", x)
             };

@@ -1,6 +1,8 @@
 
 use intmap::IntMap;
 use std::collections::HashSet;
+use std::iter::{Chain, empty};
+use std::rc::Rc;
 use bitvec::prelude::*;
 use super::super::re::*;
 use super::bits::*;
@@ -15,9 +17,9 @@ type Finals = IntMap<BitVec>;
  * TODO: check whether the .clone()'s are necessary
  */
 #[derive(Debug)]
-pub struct Regex <'a> {
+pub struct Regex {
     pub trans:Trans, 
-    init: &'a RE, 
+    init: u64, 
     finals: Finals 
 }
 
@@ -42,7 +44,9 @@ fn build_fix(all_states_sofar: HashSet<RE>,  curr_trans:Trans, sig:HashSet<char>
                 if tfs.len() == 0 {
                     None
                 } else {
-                    let tfdelta = tfs.into_iter();
+                    let tfdelta = tfs.into_iter().map(|(r,bv)|{
+                        (r, bv)
+                    });
                     Some((r,l,tfdelta))    
                 }
             });
@@ -64,7 +68,14 @@ fn build_fix(all_states_sofar: HashSet<RE>,  curr_trans:Trans, sig:HashSet<char>
                     let _inserted = states.insert(dst);
                     states
                 });
-                trans.insert(key, dstbvs.into_iter().map(|(dst, bv)| (calculate_hash(&dst), bv)).collect());
+                let dstbvs_clone = dstbvs.clone();
+                let val = dstbvs_clone.map(move |(dst, bv)| 
+                {
+                    let hash_dst = calculate_hash(&dst);
+                    let k = hash_dst.clone();
+                    (k, bv)
+                }).collect();
+                trans.insert(key, val);
                 (states_out, trans)
         });
         next_states.extend(all_states_sofar); // todo check why all_states_sofar can't be use as the init of next_states fold.
@@ -72,7 +83,7 @@ fn build_fix(all_states_sofar: HashSet<RE>,  curr_trans:Trans, sig:HashSet<char>
     }
 }
 
-pub fn build_regex(r:&RE) -> Regex {
+pub fn build_regex<'a> (r:&'a RE) -> Regex {
     let sig = r.sigma();
     let init_states = vec![r.clone()].into_iter().collect();
     let (all_states, trans) = build_fix(init_states, IntMap::new(), sig);
@@ -82,62 +93,157 @@ pub fn build_regex(r:&RE) -> Regex {
         im.insert(hash_r, emp_code(r));
         im
     });
-    Regex{trans : trans, init : r, finals:fins}
+
+    Regex{trans, init : calculate_hash(r), finals:fins}
+}
+
+use std::slice::Iter;
+use std::iter::FlatMap;
+use std::iter::Map;
+use std::vec::IntoIter;
+
+
+/* 
+pub enum CoerceIter<'a, T, I, F, G> 
+    where 
+    I : Iterator<Item=T>,
+    F : FnMut(T) -> T, 
+    G : FnMut(T) -> Map<IntoIter<T>, F>
+{
+    FromIter(Iter<'a,T>),
+    FromFlatMap(FlatMap<I, Map<IntoIter<T>, F>, G>)
+} 
+
+impl <'a, T, I, F, G>  Iterator for CoerceIter<'a, T, I, F, G> 
+    where 
+    I : Iterator<Item=T>,
+    F : FnMut(T) -> T, 
+    G : FnMut(T) -> Map<IntoIter<T>, F>
+{
+    type Item = T;
+    fn next(&mut self) -> Option<T> {
+        None // todo
+    }
 }
 
 
-pub fn parse_regex(regex:&Regex, s:&String) -> Option<BitVec> {
-    fn go<'a>(rbc:Vec<(u64,BitVec)>, trans:&Trans, finals:&Finals, s:&str) -> Vec<BitVec> {
-        if s.len() == 0 {
-            let mut res:Vec<BitVec> = vec![];
-            rbc.into_iter().for_each(|(r, bc)| {
-                match finals.get(r) {
-                    None => {}
-                    Some(bc1) => {
-                        let mut bc2 = bc.clone();
-                        bc2.extend(bc1);
-                        res.push(bc2);
-                    }
-                }
-            });
-            res
-        } else {
-            let ox = &s[0..1].chars().nth(0);
-            let (x,xs) = match ox {
-                None => panic!("parse_regex failed, empty string slice with len > 0"),
-                Some(c) => (c,&s[1..])
-            };
-            let mut tbc:Vec<(u64, BitVec)> = vec![];
-            rbc.into_iter().for_each(|(r,bc)| {
-                let hash_r = r;
-                let hash_x = calculate_hash(x);
-                let key = hash2(&hash_r, &hash_x);
-                match trans.get(key) {
-                    None => {
-                    }
-                    Some(tfs) => tfs.into_iter().for_each(|tb|{
-                        let (t, bc1) = tb;
-                        let mut bc2 = bc.clone();
-                        bc2.extend(bc1);
-                        tbc.push((*t,bc2));
-                    })
-                };
-            });
-            go(tbc, trans, finals, xs)
-        }
-    }
+type MyIter<'a> = CoerceIter<'a, (&'a u64, BitVec), dyn Iterator<Item=(&'a u64, BitVec)>, dyn FnMut((&'a u64, BitVec)) -> (&'a u64, BitVec), dyn FnMut((&'a u64, BitVec)) -> Map<IntoIter<(&'a u64, BitVec)>,dyn  FnMut((&'a u64, BitVec)) -> (&'a u64, BitVec)>>;
 
-    match regex {
-        Regex { trans, init, finals } => {
-            let hash_init = calculate_hash(init);
-            let result =  go(vec![(hash_init,BitVec::new())], trans, finals, &s);
-            if result.len() == 0 {
-                None
-            } else {
-                let bv: BitVec = (result.clone()[0]).clone();
-                Some(bv)
+*/
+
+
+/*
+pub enum CoerceIter<'a>
+{
+    FromIter(Iter<'a, (&'a u64, BitVec)>),
+    FromFlatMap(FlatMap< dyn Iterator<Item=(&'a u64, BitVec)>, Map< IntoIter<(&'a u64, BitVec)>,  dyn FnMut((&'a u64, BitVec)) -> (&'a u64, BitVec)>, dyn FnMut((&'a u64, BitVec)) -> Map<IntoIter<(&'a u64, BitVec)>, dyn FnMut((&'a u64, BitVec)) -> (&'a u64, BitVec)>>)
+} 
+*/
+
+
+pub enum CoerceIterator<'a>
+{
+    FromIntoIter(IntoIter<(u64, BitVec)>),
+    FromIterator(Rc<dyn Iterator<Item=(u64, BitVec)> + 'a>)
+} 
+
+impl <'a>  Iterator for CoerceIterator<'a>
+{
+    type Item = (u64, BitVec);
+    fn next(&mut self) -> Option<(u64, BitVec)> {
+        match self {
+            CoerceIterator::FromIntoIter(iit) => iit.next(),
+            CoerceIterator::FromIterator(rcit) => {
+                match Rc::get_mut(rcit) {
+                    None => None,
+                    Some(it) => it.next()
+                }
             }
         }
     }
-
 }
+
+
+impl <'a> Clone for CoerceIterator<'a>
+{
+    fn clone(&self) -> Self {
+        match self {
+            CoerceIterator::FromIntoIter(iter) => CoerceIterator::FromIntoIter(iter.clone()),
+            CoerceIterator::FromIterator(box_iter) => CoerceIterator::FromIterator(box_iter.clone())
+        }
+    }
+}
+
+
+impl Regex {
+    pub fn parse_regex<'a>(&'a self, s:&String) -> Option<BitVec>{
+        match self {
+            Regex { trans, init, finals } => {
+                let empty_bv = BitVec::new();
+                let rbc_vec = vec![(init.clone(),empty_bv)];
+                let init_rbc = rbc_vec.into_iter();
+                let init_iter = CoerceIterator::FromIntoIter(init_rbc);
+                let mut result =  self.go(init_iter,  &s);
+                match result.next() {
+                    None => None,
+                    Some(bv) => {
+                        let r = bv.clone();
+                        Some(r) // Some(bv)
+                    }
+                }
+            }
+        }
+    
+    }
+
+    pub fn go<'a>(&'a self, rbc:CoerceIterator<'a>, s:&'a str) -> impl Iterator<Item=BitVec> +'a {
+        let mut mrbc = rbc;
+        let mut ms = s;
+        
+        while ms.len() >0 {
+            let ox = ms[0..1].chars().nth(0);
+            let (x,xs):(char, &str) = match ox {
+                None => panic!("parse_regex failed, empty string slice with len > 0"),
+                Some(c) => (c,&ms[1..])
+            };
+            let tbc = mrbc.clone().flat_map(move |(r,bc)| {
+                let hash_r = r;
+                let hash_x = calculate_hash(&x);
+                let key = hash2(&hash_r, &hash_x);
+                let g = move |x:(u64, BitVec)| -> (u64, BitVec) {
+                    let (t, bc1) = x;
+                    let mut bc2 = bc.clone();
+                    bc2.extend(bc1);
+                    (t,bc2)
+                };
+                match self.trans.get(key) {
+                    None => {
+                        let empty:Vec<(u64, BitVec)> = vec![];
+                        empty.into_iter().map(g)
+                    },
+                    Some(tfs) => { 
+                        tfs.clone().into_iter().map(g)
+                    }
+                }
+            });
+            let c = tbc.into_iter();
+            mrbc = CoerceIterator::FromIterator(Rc::new(c)); // fixme
+            ms = xs;
+        }
+        let f = |(r, bc):(u64, BitVec)| -> Option<BitVec> {
+            let mut bc2 = bc.clone();
+            match self.finals.get(r) {
+                None => None,
+                Some(bc1) => {
+                    bc2.extend(bc1);
+                    Some(bc2)
+                }
+            }
+        };
+        mrbc.flat_map(f)
+    } 
+}
+
+
+
+// using Iter causes rustc to panic.
