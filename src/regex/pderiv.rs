@@ -2,6 +2,7 @@ pub mod bits;
 pub mod parsetree;
 pub mod transduce;
 pub mod parse;
+pub mod parse_lazy;
 
 
 use super::list::*;

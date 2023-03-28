@@ -100,7 +100,7 @@ fn main() {
 use std::time::{Duration, SystemTime};
 use std::{env, fs};
 use rs_pderiv::regex::re::*;
-use rs_pderiv::regex::pderiv::parse::*;
+use rs_pderiv::regex::pderiv::parse_lazy::*;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
