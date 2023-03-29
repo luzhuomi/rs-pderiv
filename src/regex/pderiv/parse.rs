@@ -28,7 +28,71 @@ pub fn cnt(regex:&Regex)-> usize {
     regex.trans.len()
 }
 
+/**
+ * pre cond 1  allStatesSoFar \insect newStates = \emptyset
+            2  dom(dom(currTrans)) \in allStatesFoFar
+ */
+fn build_fix(mut all_states_sofar: HashSet<RE>, new_states: HashSet<RE>, curr_trans:Trans, sig:HashSet<char>) -> (HashSet<RE>, Trans) {
+    if new_states.len() == 0 {
+        (all_states_sofar, curr_trans)
+    } else {
+        let new_states_clone = new_states.clone();
+        let new_delta = new_states_clone.iter().flat_map(
+            |r| {
+                let e = sig.iter().filter(|l|{
+                    let hash_r = calculate_hash(r);
+                    let hash_l = calculate_hash(l);
+                    let key = hash2(&hash_r, &hash_l);
+                    !(curr_trans.contains_key(key))
+                }).flat_map(move |l| {
+                    let tfs = pderiv_bc(r,l);
+                    if tfs.len() == 0 {
+                        None
+                    } else {
+                        let tfdelta = tfs.into_iter();
+                        Some((r,l,tfdelta))    
+                    }
+                });
+                e
+            });
+        all_states_sofar.extend(new_states);
+        let all_states_next:HashSet<RE> = all_states_sofar;
+        let new_trans :Trans = curr_trans.clone();
+        let (new_states_next, next_trans) = new_delta
+            .fold((HashSet::new(), new_trans), |acc, t| {
+                let (states_sofar, mut trans) = acc;
+                let (src, c, dstbvs) = t;
+                let hash_src = calculate_hash(src);
+                let hash_c  = calculate_hash(c);
+                let key = hash2(&hash_src, &hash_c);
+                let states_out = dstbvs.clone().fold(states_sofar, |mut states, s| {
+                    let (dst, _bv) = s;
+                    let _inserted = states.insert(dst);
+                    states
+                });
+                trans.insert(key, dstbvs.into_iter().map(|(dst, bv)| (calculate_hash(&dst), bv)).collect());
+                (states_out, trans)
+        });
+        build_fix(all_states_next, new_states_next, next_trans, sig)
+    }
+}
 
+
+pub fn build_regex(r:&RE) -> Regex {
+    let sig = r.sigma();
+    let init_all_states = vec![].into_iter().collect();
+    let init_new_states = vec![r.clone()].into_iter().collect();
+    let (all_states, trans) = build_fix(init_all_states, init_new_states, IntMap::new(), sig);
+    let emp_im :IntMap<BitVec> = IntMap::new();
+    let fins = all_states.iter().filter(|r|{r.nullable()}).fold(emp_im, |mut im,r|{
+        let hash_r = calculate_hash(r);
+        im.insert(hash_r, emp_code(r));
+        im
+    });
+    Regex{trans : trans, init : r, finals:fins}
+}
+
+/* 
 fn build_fix(all_states_sofar: HashSet<RE>,  curr_trans:Trans, sig:HashSet<char>) -> (HashSet<RE>, Trans) {
     let mut new_delta = all_states_sofar.iter().flat_map(
         |r| {
@@ -84,7 +148,7 @@ pub fn build_regex(r:&RE) -> Regex {
     });
     Regex{trans : trans, init : r, finals:fins}
 }
-
+*/
 
 
 impl <'a> Regex<'a> {
