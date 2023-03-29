@@ -70,7 +70,7 @@ pub fn pderiv_bc(r:&RE, l:&char) -> Vec<(RE,BitVec)> {
                 for (t,bv) in ts {
                     res.push((RE::Seq(Box::new(t), r2.clone()), bv))
                 }
-                res
+                nub_vec_fst(res)
             }
         },
         RE::Choice(r1,r2) => {
@@ -97,7 +97,7 @@ pub fn pderiv_bc(r:&RE, l:&char) -> Vec<(RE,BitVec)> {
                 bv1.insert(0, false);
                 res.push((RE::Seq(Box::new(t), Box::new(r.clone())), bv1))
             }
-            res
+            nub_vec_fst(res)
         }
     }
 }
