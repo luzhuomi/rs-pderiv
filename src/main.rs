@@ -116,7 +116,7 @@ fn main() {
             dbg!(calculate_hash(&r));
             dbg!(calculate_hash(&calculate_hash(&r)));
             let regex = build_regex(&r);
-            // println!("built: {}", cnt(&regex));
+            println!("built: {}", cnt(&regex));
             let time1 = SystemTime::now();
             println!("{:#?}", time1.duration_since(time0));
             let mut contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
@@ -145,11 +145,13 @@ fn mkpat(n:i32) -> RE {
         let j = n-1;
         let r = RE::Choice(Box::new(Lit('a')), Box::new(Eps));
         let fst = (0..j).into_iter().fold(r.clone(), |acc,_i| {
-            RE::Seq(Box::new(acc),Box::new(r.clone()))
+            // RE::Seq(Box::new(acc),Box::new(r.clone()))
+            RE::Seq(Box::new(r.clone()), Box::new(acc))
         });
         let t = RE::Lit('a');
         let snd = (0..j).into_iter().fold(t.clone(), |acc,_i| {
-            RE::Seq(Box::new(acc),Box::new(t.clone()))
+            // RE::Seq(Box::new(acc),Box::new(t.clone()))
+            RE::Seq(Box::new(t.clone()), Box::new(acc))
         });
         RE::Seq(Box::new(fst),Box::new(snd))
         // RE::Seq(Box::new(snd),Box::new(fst))

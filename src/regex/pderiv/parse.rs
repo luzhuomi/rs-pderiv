@@ -37,6 +37,7 @@ fn build_fix(mut all_states_sofar: Vec<RE>, mut all_states_sofar_im: IntMap<()>,
     if new_states.len() == 0 {
         (all_states_sofar, curr_trans)
     } else {
+        /* 
         let new_states_clone = new_states.clone(); // todo, this clone is expensive when states are huges, e.g. 10k
         let new_delta:Vec<_> = new_states_clone.iter().flat_map(
             |r| {
@@ -56,44 +57,72 @@ fn build_fix(mut all_states_sofar: Vec<RE>, mut all_states_sofar_im: IntMap<()>,
                 });
                 e
             }).collect();
-
-        all_states_sofar_im.extend(new_states.iter().map(|t| {(calculate_hash(t), ())}));
-        all_states_sofar.extend(new_states);
-        let all_states_next:Vec<RE> = all_states_sofar;
+        */
+        let (new_states_clone, new_data_nested):(Vec<_>, Vec<_>) = new_states.into_iter().map(
+            |r| {
+                let e:Vec<_> = sig.iter()
+                /* .filter(|l|{
+                    let hash_r = calculate_hash(&r);
+                    let hash_l = calculate_hash(l);
+                    let key = hash2(&hash_r, &hash_l);
+                    !(curr_trans.contains_key(key))
+                })*/
+                .flat_map(|l| {
+                    let l_c = l.clone();
+                    let tfs = pderiv_bc(&r,&l_c);
+                    if tfs.len() == 0 {
+                        None
+                    } else {
+                        let tfdelta = tfs;
+                        Some((calculate_hash(&r),l,tfdelta))    
+                    }
+                }).collect();
+                (r,e)
+            }).unzip();
+        let new_data_flatten:Vec<_>= new_data_nested.into_iter().flat_map(|x|{x.into_iter()}).collect();
+        
+        all_states_sofar_im.extend(new_states_clone.iter().map(|t| {(calculate_hash(t), ())}));
+        dbg!(&all_states_sofar_im.len());
         let all_states_next_im:IntMap<()> = all_states_sofar_im;
-        let (new_states_next, new_states_next_im, next_trans) = new_delta.into_iter()
-            .fold((Vec::new(), IntMap::new(), curr_trans), |acc, t| {
-                let (new_states_sofar, new_states_sofar_im, mut trans) = acc;
+        // new_state_next, for the next iteration
+        // new_states_next_im, seems no use for now.
+        let (new_states_next, next_trans) = new_data_flatten.into_iter()
+            .fold((Vec::new(), curr_trans), |acc, t| {
+                let (new_states_sofar, mut trans) = acc;
                 let (src, c, dstbvs) = t;
-                let hash_src = calculate_hash(src);
-                let hash_c  = calculate_hash(c);
+                let hash_src = src;
+                let hash_c  = calculate_hash(&c);
                 let key = hash2(&hash_src, &hash_c);
                 trans.insert(key, dstbvs.iter().map(|(dst, bv)| (calculate_hash(dst), bv.clone())).collect());
                 let filtered_dstbv:Vec<(RE, BitVec)> = dstbvs.into_iter().filter(|(s,_bv)|
                 { 
                     let hash_s = calculate_hash(&s);
-                    !(new_states_sofar_im.contains_key(hash_s) || all_states_next_im.contains_key(hash_s))
+                    !all_states_next_im.contains_key(hash_s)
                 }).collect();
-                let (states_out, states_out_im) = filtered_dstbv.into_iter().fold((new_states_sofar, new_states_sofar_im), |(mut states, mut states_im), s| {
+                let states_out = filtered_dstbv.into_iter().fold(new_states_sofar, |mut states, s| {
                     let (dst, _bv) = s;
                     // states_im.insert(calculate_hash(&dst), ());
                     let _inserted = states.push(dst);
-                    (states, states_im)
+                    states
                 });
 
-                (states_out, states_out_im, trans)
+                (states_out, trans)
         });
-        build_fix(all_states_next, new_states_next_im, new_states_next, next_trans, sig)
+        dbg!(&new_states_next.len());
+        all_states_sofar.extend(new_states_clone);
+        let all_states_next:Vec<RE> = all_states_sofar;
+        build_fix(all_states_next, all_states_next_im, new_states_next, next_trans, sig)
     }
 }
 
 
-pub fn build_regex(r:&RE) -> Regex {
+pub fn build_regex(r:&RE) -> Regex { // todo: GET RID OF ALL_STATES, WHICH IS ONLY NEEDED TO CONSTRUCT THE FINS
     let sig = r.sigma();
     let init_all_states = vec![].into_iter().collect();
     let init_all_states_im = vec![].into_iter().collect();
     let init_new_states = vec![r.clone()].into_iter().collect();
     let (all_states, trans) = build_fix(init_all_states, init_all_states_im, init_new_states, IntMap::new(), sig);
+    dbg!(&all_states.len());
     let emp_im :IntMap<BitVec> = IntMap::new();
     let fins = all_states.iter().filter(|r|{r.nullable()}).fold(emp_im, |mut im,r|{
         let hash_r = calculate_hash(r);
@@ -103,6 +132,7 @@ pub fn build_regex(r:&RE) -> Regex {
     Regex{trans : trans, init : r, finals:fins}
 }
 
+// this could be inefficient.
 /* 
 fn build_fix(all_states_sofar: HashSet<RE>,  curr_trans:Trans, sig:HashSet<char>) -> (HashSet<RE>, Trans) {
     let mut new_delta = all_states_sofar.iter().flat_map(
@@ -200,7 +230,7 @@ impl <'a> Regex<'a> {
                         })
                     };
                 });
-                tbc = nub_vec_fst(tbc);
+                tbc = nub_vec_fst_u64(tbc);
                 go(tbc, trans, finals, xs)
             }
         }

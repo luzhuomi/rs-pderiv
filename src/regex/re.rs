@@ -24,6 +24,7 @@ macro_rules! choice{
     }
 }
 
+use intmap::IntMap;
 pub(crate) use seq; 
 pub(crate) use star; 
 pub(crate) use choice; 
@@ -152,6 +153,24 @@ pub fn nub_vec_fst<T:Clone+Hash+Eq, S>(v:Vec<(T,S)>)-> Vec<(T,S)> {
         });
     res
 }
+
+
+pub fn nub_vec_fst_u64<S>(v:Vec<(u64,S)>)-> Vec<(u64,S)> {
+    let empty_seen = IntMap::new();
+    let empty_res = Vec::new();
+    let (seen, res) = v.into_iter().fold( (empty_seen, empty_res), | (mut seen,mut res), (t,s)|
+        {
+            if !seen.contains_key(t) { 
+                seen.insert(t,());
+                res.push((t,s));
+                (seen, res)    
+            } else {
+                (seen, res)
+            }
+        });
+    res
+}
+
 
 
 // let's use the default hasher
