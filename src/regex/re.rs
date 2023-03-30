@@ -4,23 +4,24 @@ use std::collections::HashSet;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::num::Wrapping;
+use std::rc::Rc;
 
 macro_rules! seq{
     ($a:expr, $b:expr) => { 
-        RE::Seq(Box::new($a), Box::new($b))
+        RE::Seq(std::rc::Rc::new($a), std::rc::Rc::new($b))
     }
 }
 
 macro_rules! star{
     ($a:expr) => { 
-        RE::Star(Box::new($a))
+        RE::Star(std::rc::Rc::new($a))
     }
 }
 
 
 macro_rules! choice{
     ($a:expr, $b:expr) => { 
-        RE::Choice(Box::new($a), Box::new($b))
+        RE::Choice(std::rc::Rc::new($a), std::rc::Rc::new($b))
     }
 }
 
@@ -39,12 +40,12 @@ pub enum RE {
     Phi,
     Eps,
     Lit(char),
-    Seq(Box<RE>,Box<RE>),
-    Choice(Box<RE>,Box<RE>),
-    Star(Box<RE>)
+    Seq(Rc<RE>,Rc<RE>),
+    Choice(Rc<RE>,Rc<RE>),
+    Star(Rc<RE>)
 }
 
-/** 
+/**
  * impelementing the clone() for RE
  */
 impl Clone for RE {
@@ -53,9 +54,9 @@ impl Clone for RE {
             RE::Phi => RE::Phi,
             RE::Eps => RE::Eps,
             RE::Lit(l) => RE::Lit(l.clone()),
-            RE::Seq(r1, r2) => RE::Seq(r1.clone(), r2.clone()),
-            RE::Choice(r1, r2) => RE::Choice(r1.clone(), r2.clone()),
-            RE::Star(r) => RE::Star(r.clone())
+            RE::Seq(r1, r2) => RE::Seq(Rc::clone(r1), Rc::clone(r2)),
+            RE::Choice(r1, r2) => RE::Choice(Rc::clone(r1), Rc::clone(r2)),
+            RE::Star(r) => RE::Star(Rc::clone(r))
         }
     }
 }

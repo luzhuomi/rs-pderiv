@@ -1,103 +1,6 @@
-/*
-fn main() {
-    println!("Hello, world!");
-}
-*/
 
-// use std::io;
-
-/* fn main() {
-x    println!("Guess the number!");
-
-    println!("Please input your guess.");
-
-    let mut guess = String::new();
-
-    io::stdin()
-        .read_line(&mut guess)
-        .expect("Failed to read line");
-
-    println!("You guessed: {guess}");
-
-    foo();
-
-    
-
-}
-
-
-fn foo() {
-    let mut x = String::from("hello");
-
-    let r1 = bar(&x);
-    let r2 = &x;
-    println!("{r1} {r2}");
-}
-
-fn bar(s:&String) -> String {
-    let t = s.to_string() + "bye";
-    t // &t wont work as it will leak t out of scope
-}
-
-fn multref() {
-    let mut x = String::from("hello");
-    let r1 = &mut x;
-    let r2 = &x; 
-    // print!("{r1} {r2}"); // error, extending r1's life time here., x2 cant borrow
-}
-
-/*
-fn main() {
-    foo();
-}
-
-*/
-struct AlwaysEqual;
-
-struct Another;
-
-
-fn main() {
-    let x = AlwaysEqual;
-    let y = AlwaysEqual;
-}
-*/
-
-/* 
-fn main() {
-    let mut list = vec![1, 2, 3];
-    println!("Before defining closure: {:?}", list);
-
-    let mut borrows_mutably =  || list.push(7);
-
-    borrows_mutably();
-    borrows_mutably();
-    println!("After calling closure: {:?}", list);
-}
-
-*/
-
-
-
-/*
-fn main() {
-    let list = vec![1,2,3];
-    println!("Before defining closure: {:?}", list);
-
-    fn borrow_and_move (mut x:Vec<i32>)->Vec<i32>  {
-        if x.len() > 5 {
-            println!("here");
-            x
-        } else {
-            x.push(7);
-            borrow_and_move(x)
-        }
-    };
-    let list2 = borrow_and_move(list);
-    println!("After calling closure: {:?}", list2);
-}
-*/
-use std::time::{Duration, SystemTime};
+use std::time::SystemTime;
+use std::rc::Rc;
 use std::{env, fs};
 use rs_pderiv::regex::re::*;
 use rs_pderiv::regex::pderiv::parse::*;
@@ -143,18 +46,18 @@ fn mkpat(n:i32) -> RE {
     use RE::*;
     if n > 0 {
         let j = n-1;
-        let r = RE::Choice(Box::new(Lit('a')), Box::new(Eps));
+        let r = RE::Choice(Rc::new(Lit('a')), Rc::new(Eps));
         let fst = (0..j).into_iter().fold(r.clone(), |acc,_i| {
-            // RE::Seq(Box::new(acc),Box::new(r.clone()))
-            RE::Seq(Box::new(r.clone()), Box::new(acc))
+            // RE::Seq(Rc::new(acc),Rc::new(r.clone()))
+            RE::Seq(Rc::new(r.clone()), Rc::new(acc))
         });
         let t = RE::Lit('a');
         let snd = (0..j).into_iter().fold(t.clone(), |acc,_i| {
-            // RE::Seq(Box::new(acc),Box::new(t.clone()))
-            RE::Seq(Box::new(t.clone()), Box::new(acc))
+            // RE::Seq(Rc::new(acc),Rc::new(t.clone()))
+            RE::Seq(Rc::new(t.clone()), Rc::new(acc))
         });
-        RE::Seq(Box::new(fst),Box::new(snd))
-        // RE::Seq(Box::new(snd),Box::new(fst))
+        RE::Seq(Rc::new(fst),Rc::new(snd))
+        // RE::Seq(Rc::new(snd),Rc::new(fst))
     } else {
         RE::Phi
     }

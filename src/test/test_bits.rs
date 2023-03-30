@@ -2,6 +2,7 @@ use bitvec::prelude::*;
 use crate::regex::re::*;
 use crate::regex::pderiv::*;
 use crate::regex::pderiv::bits::*;
+use std::rc::Rc;
 
 #[test]
 fn test_empcode_star_a_a() {

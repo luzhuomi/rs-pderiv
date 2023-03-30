@@ -6,6 +6,7 @@ use super::super::re::*;
 use super::bits::*;
 // use super::parsetree::*;
 
+
 type Trans = HashMap<(RE,char), Vec<(RE, BitVec)>>;
 type Finals = HashMap<RE, BitVec>;
 
@@ -130,3 +131,4 @@ pub fn parse_regex(regex:&Regex, s:&String) -> Option<BitVec> {
     }
 
 }
+

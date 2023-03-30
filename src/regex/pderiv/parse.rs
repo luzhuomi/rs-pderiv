@@ -82,7 +82,7 @@ fn build_fix(mut all_states_sofar: Vec<RE>, mut all_states_sofar_im: IntMap<()>,
         let new_data_flatten:Vec<_>= new_data_nested.into_iter().flat_map(|x|{x.into_iter()}).collect();
         
         all_states_sofar_im.extend(new_states_clone.iter().map(|t| {(calculate_hash(t), ())}));
-        dbg!(&all_states_sofar_im.len());
+        // dbg!(&all_states_sofar_im.len());
         let all_states_next_im:IntMap<()> = all_states_sofar_im;
         // new_state_next, for the next iteration
         // new_states_next_im, seems no use for now.
@@ -108,7 +108,7 @@ fn build_fix(mut all_states_sofar: Vec<RE>, mut all_states_sofar_im: IntMap<()>,
 
                 (states_out, trans)
         });
-        dbg!(&new_states_next.len());
+        // dbg!(&new_states_next.len());
         all_states_sofar.extend(new_states_clone);
         let all_states_next:Vec<RE> = all_states_sofar;
         build_fix(all_states_next, all_states_next_im, new_states_next, next_trans, sig)

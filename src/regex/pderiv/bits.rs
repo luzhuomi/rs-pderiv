@@ -3,7 +3,7 @@
 use bitvec::prelude::*;
 use super::super::re::*;
 use super::parsetree::*;
-
+use std::rc::Rc;
 
 /**
  * precond: r is nullable
@@ -56,7 +56,7 @@ pub fn pderiv_bc(r:&RE, l:&char) -> Vec<(RE,BitVec)> {
                 let vs = pderiv_bc(r2, l);
                 let mut res = vec![];
                 for (t,bv) in ts {
-                    res.push((RE::Seq(Box::new(t), r2.clone()), bv))
+                    res.push((RE::Seq(Rc::new(t), Rc::clone(r2)), bv))
                 }
                 for (v, mut bu) in vs {
                     let mut emp = emp_code(r1);
@@ -68,7 +68,7 @@ pub fn pderiv_bc(r:&RE, l:&char) -> Vec<(RE,BitVec)> {
                 let ts = pderiv_bc(r1, l);
                 let mut res = vec![];
                 for (t,bv) in ts {
-                    res.push((RE::Seq(Box::new(t), r2.clone()), bv))
+                    res.push((RE::Seq(Rc::new(t), Rc::clone(r2)), bv))
                 }
                 nub_vec_fst(res)
             }
@@ -95,7 +95,7 @@ pub fn pderiv_bc(r:&RE, l:&char) -> Vec<(RE,BitVec)> {
             for (t, bv) in ts {
                 let mut bv1 = bv;
                 bv1.insert(0, false);
-                res.push((RE::Seq(Box::new(t), Box::new(r.clone())), bv1))
+                res.push((RE::Seq(Rc::new(t),Rc::new(r.clone())), bv1))
             }
             nub_vec_fst(res)
         }
