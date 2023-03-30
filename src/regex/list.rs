@@ -1,4 +1,6 @@
 use core::ops::*;
+use std::rc::Rc;
+
 
 // it seems that we don't need this. we used Vec
 
@@ -8,7 +10,7 @@ use core::ops::*;
 #[derive(Debug)]
 pub enum List<T> {
     Nil,
-    Cons(T, Box<List<T>>)
+    Cons(T, Rc<List<T>>)
 }
 
 pub fn member<T:Eq>(t:&T, l:&List<T>) -> bool {
@@ -50,7 +52,7 @@ impl <T:Eq + Clone>List<T> {
                 if xs.contains(x) {
                     xs.nub()
                 } else {
-                    List::Cons(x.clone(), Box::new(xs.nub()))
+                    List::Cons(x.clone(), Rc::new(xs.nub()))
                 }
             }
         }
@@ -63,7 +65,7 @@ impl <A:Clone>List<A> {
         match self {
             List::Nil => s,
             List::Cons(x, xs) => {
-                List::Cons(x.clone(), Box::new(xs.append(s)))
+                List::Cons(x.clone(), Rc::new(xs.append(s)))
             }
         }
     }
@@ -82,7 +84,14 @@ impl <A>List<A> {
     pub fn map<B>(&self, f:impl Fn(&A) -> B) -> List<B> {
         match self {
             List::Nil => List::Nil,
-            List::Cons(x,xs) => List::Cons(f(x), Box::new(xs.map(f)))
+            List::Cons(x,xs) => List::Cons(f(x), Rc::new(xs.map(f)))
+        }
+    }
+
+    pub fn foldl<B>(&self, acc:B, f: impl Fn(B, &A) -> B) -> B {
+        match self {
+            List::Nil => acc,
+            List::Cons(x,xs) => xs.foldl(f(acc,x), f)
         }
     }    
 }

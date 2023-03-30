@@ -1,8 +1,10 @@
 
 use intmap::IntMap;
+use std::rc::Rc;
 use std::collections::HashSet;
 use bitvec::prelude::*;
 use super::super::re::*;
+use super::super::list::*;
 use super::bits::*;
 // use super::parsetree::*;
 
@@ -192,12 +194,13 @@ pub fn build_regex(r:&RE) -> Regex {
 */
 
 
+/*
 impl <'a> Regex<'a> {
     pub fn parse_regex(&self, s:&'a String) -> Option<BitVec> {
         fn go<'a>(rbc:Vec<(u64,BitVec)>, trans:&Trans, finals:&Finals, s:&str) -> Vec<BitVec> {
             if s.len() == 0 {
                 let mut res:Vec<BitVec> = vec![];
-                rbc.into_iter().for_each(|(r, bc)| {
+                rbc.into_iter().for_each(|(r, bc)| { // this is inefficient, we are building all possible final states, but we only need one.
                     match finals.get(r) {
                         None => {}
                         Some(bc1) => {
@@ -224,7 +227,7 @@ impl <'a> Regex<'a> {
                         }
                         Some(tfs) => tfs.into_iter().for_each(|tb|{
                             let (t, bc1) = tb;
-                            let mut bc2 = bc.clone();
+                            let mut bc2 = bc.clone(); // this is inefficient, we need to clone the current accumulated bc for the next N possible states, but in the end we only need one1
                             bc2.extend(bc1);
                             tbc.push((*t,bc2));
                         })
@@ -250,4 +253,76 @@ impl <'a> Regex<'a> {
     
     }
 }
+ */
 
+
+// One way to speed up is to keep track of the select sequence bitvec in reversed order.
+// through Rc, multiple "next generations of bitvec  (w.r.t the same next state)" can share the same tail (previous generation)
+// we reduce the time cloning and appending the bitvec and minimize the space requirement.
+
+
+type Path<'a> = List<&'a BitVec>;
+
+fn aggr(end:BitVec, path:Rc<List<&BitVec>>) -> BitVec {
+    path.foldl(end, |mut bva, bv| {
+            bva.extend(bv.iter());
+            bva
+    })
+} 
+
+impl <'a> Regex<'a> {
+    pub fn parse_regex(&self, s:&'a String) -> Option<BitVec> {
+        // each rbc is the current state and the reversed bit vec path back to the start
+        fn go<'a>(rbc:Vec<(u64,Rc<Path>)>, trans:&Trans, finals:&Finals, s:&str) -> Option<BitVec> {
+            if s.len() == 0 {
+                let mut res:Option<BitVec> = None;
+                for (r,path) in rbc {
+                    match finals.get(r) {
+                        None => {}
+                        Some(bc1) => {
+                            let mut bc2 = aggr(bc1.clone(), path); // just need to clone 1
+                            bc2.reverse();
+                            res = Some(bc2);
+                        }
+                    }
+                }
+                res
+            } else {
+                let ox = &s[0..1].chars().nth(0);
+                let (x,xs) = match ox {
+                    None => panic!("parse_regex failed, empty string slice with len > 0"),
+                    Some(c) => (c,&s[1..])
+                };
+                let mut tbc:Vec<(u64, Rc<List<&BitVec>>)> = vec![];
+                rbc.into_iter().for_each(|(r,path)| {
+                    let hash_r = r;
+                    let hash_x = calculate_hash(x);
+                    let key = hash2(&hash_r, &hash_x);
+                    match trans.get(key) {
+                        None => {
+                        }
+                        Some(tfs) => tfs.into_iter().for_each(|tb|{
+                            let (t, bc1) = tb;
+                            // let mut bc2 = bc.clone();
+                            // bc2.extend(bc1);
+                            let path1 = Rc::new(List::Cons(bc1, Rc::clone(&path)));
+                            tbc.push((*t,path1));
+                        })
+                    };
+                });
+                tbc = nub_vec_fst_u64(tbc);
+                go(tbc, trans, finals, xs)
+            }
+        }
+    
+        match self {
+            Regex { trans, init, finals } => {
+                let hash_init = calculate_hash(init);
+                let result =  go(vec![(hash_init,Rc::new(List::Nil))], trans, finals, &s);
+                result
+            }
+        }
+    
+    }
+}
+ 
