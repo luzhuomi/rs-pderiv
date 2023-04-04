@@ -35,7 +35,7 @@ pub fn cnt(regex:&Regex)-> usize {
             2  dom(dom(currTrans)) \in allStatesFoFar
             3  all_states_sofar_im is the  intmap representation of all_states_sofar for quicker lookup
  */
-fn build_fix(mut all_states_sofar: Vec<RE>, mut all_states_sofar_im: IntMap<()>, new_states: Vec<RE>, curr_trans:Trans, sig:HashSet<char>) -> (Vec<RE>, Trans) {
+fn build_fix(mut cache: PDCached, mut all_states_sofar: Vec<RE>, mut all_states_sofar_im: IntMap<()>, new_states: Vec<RE>, curr_trans:Trans, sig:HashSet<char>) -> (Vec<RE>, Trans) {
     if new_states.len() == 0 {
         (all_states_sofar, curr_trans)
     } else {
@@ -71,7 +71,7 @@ fn build_fix(mut all_states_sofar: Vec<RE>, mut all_states_sofar_im: IntMap<()>,
                 })*/
                 .flat_map(|l| {
                     let l_c = l.clone();
-                    let tfs = pderiv_bc(&r,&l_c);
+                    let tfs = cache.pderiv_bc(&r,&l_c);
                     if tfs.len() == 0 {
                         None
                     } else {
@@ -113,17 +113,18 @@ fn build_fix(mut all_states_sofar: Vec<RE>, mut all_states_sofar_im: IntMap<()>,
         // dbg!(&new_states_next.len());
         all_states_sofar.extend(new_states_clone);
         let all_states_next:Vec<RE> = all_states_sofar;
-        build_fix(all_states_next, all_states_next_im, new_states_next, next_trans, sig)
+        build_fix(cache, all_states_next, all_states_next_im, new_states_next, next_trans, sig)
     }
 }
 
 
 pub fn build_regex(r:&RE) -> Regex { // todo: GET RID OF ALL_STATES, WHICH IS ONLY NEEDED TO CONSTRUCT THE FINS
     let sig = r.sigma();
+    let cache = PDCached::new();
     let init_all_states = vec![].into_iter().collect();
     let init_all_states_im = vec![].into_iter().collect();
     let init_new_states = vec![r.clone()].into_iter().collect();
-    let (all_states, trans) = build_fix(init_all_states, init_all_states_im, init_new_states, IntMap::new(), sig);
+    let (all_states, trans) = build_fix(cache, init_all_states, init_all_states_im, init_new_states, IntMap::new(), sig);
     dbg!(&all_states.len());
     let emp_im :IntMap<BitVec> = IntMap::new();
     let fins = all_states.iter().filter(|r|{r.nullable()}).fold(emp_im, |mut im,r|{

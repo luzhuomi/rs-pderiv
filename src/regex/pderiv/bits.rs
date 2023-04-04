@@ -1,6 +1,7 @@
 
 
 use bitvec::prelude::*;
+use intmap::IntMap;
 use super::super::re::*;
 use super::parsetree::*;
 use std::rc::Rc;
@@ -98,6 +99,107 @@ pub fn pderiv_bc(r:&RE, l:&char) -> Vec<(RE,BitVec)> {
                 res.push((RE::Seq(Rc::new(t),Rc::new(r.clone())), bv1))
             }
             nub_vec_fst(res)
+        }
+    }
+}
+
+
+
+pub struct PDCached {
+    pub cached: IntMap<Vec<(RE,BitVec)>>
+}
+
+impl PDCached {
+    pub fn new() -> Self {
+        PDCached { 
+            cached:IntMap::new()
+        }
+    }
+    pub fn pderiv_bc(&mut self, r:&RE, l:&char) -> Vec<(RE,BitVec)> {
+        let hash_r = calculate_hash(r);
+        let hash_l = calculate_hash(l);
+        let key = hash2(&hash_r, &hash_l);
+        match self.cached.get(key) {
+            Some(v) => v.clone(),
+            None => {
+                match r {
+                    RE::Phi => { 
+                        let v = vec![];
+                        self.cached.insert(key, v.clone());
+                        v
+                    } 
+                    RE::Eps => {
+                        let v = vec![];
+                        self.cached.insert(key, v.clone());
+                        v
+                    } 
+                    RE::Lit(m) => {
+                        if l == m {
+                            let v = vec![(RE::Eps, bitvec![])];
+                            self.cached.insert(key, v.clone());
+                            v
+                        } else {
+                            let v = vec![];
+                            self.cached.insert(key, v.clone());
+                            v
+                        }
+                    },
+                    RE::Seq(r1, r2) => {
+                        if r1.nullable() {
+                            let ts = self.pderiv_bc(r1, l);
+                            let vs = self.pderiv_bc(r2, l);
+                            let res:Vec<(RE,BitVec)> = ts.into_iter().map(|(t,bv)|{
+                                (RE::Seq(Rc::new(t), Rc::clone(r2)), bv)
+                            }
+                            ).chain(
+                                vs.into_iter().map(|(v,mut bu)|{
+                                    let mut emp = emp_code(r1);
+                                    emp.append(& mut bu);     
+                                    (v,emp)
+                                })
+                            ).collect();
+                            let nubbed = nub_vec_fst(res);
+                            self.cached.insert(key, nubbed.clone());
+                            nubbed
+                        } else {
+                            let ts = self.pderiv_bc(r1, l);
+                            let res : Vec<(RE, BitVec)> = ts.into_iter().map(|(t,bv)| {
+                                (RE::Seq(Rc::new(t), Rc::clone(r2)), bv)
+                            }).collect();
+                            let nubbed = nub_vec_fst(res);
+                            self.cached.insert(key, nubbed.clone());
+                            nubbed
+                        }
+                    },
+                    RE::Choice(r1,r2) => {
+                        let ts = self.pderiv_bc(r1, l);
+                        let vs = self.pderiv_bc(r2, l);
+                        let res: Vec<(RE, BitVec)>  = ts.into_iter().map(|(t,bv)|{
+                            let mut bv1 = bv;
+                            bv1.insert(0, false);
+                            (t,bv1)
+                        }).chain(vs.into_iter().map(|(v, bu)| {
+                            let mut bu1 = bu;
+                            bu1.insert(0, true);
+                            (v,bu1)
+                        })).collect();
+                        let nubbed = nub_vec_fst(res);
+                        self.cached.insert(key, nubbed.clone());
+                        nubbed
+                    },
+                    RE::Star(r1) => {
+                        let ts = self.pderiv_bc(r1,l);
+                        let res:Vec<(RE,BitVec)> = ts.into_iter().map( |(t,bv)|{
+                            let mut bv1 = bv;
+                            bv1.insert(0, false);
+                            (RE::Seq(Rc::new(t),Rc::new(r.clone())),bv1)
+                        }).collect();
+                        let nubbed = nub_vec_fst(res);
+                        self.cached.insert(key, nubbed.clone());
+                        nubbed
+                    }
+                }
+            }
         }
     }
 }
