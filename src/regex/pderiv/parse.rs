@@ -6,8 +6,9 @@ use bitvec::prelude::*;
 use super::super::re::*;
 use super::super::list::*;
 use super::bits::*;
-// use super::parsetree::*;
+use super::parsetree::*;
 
+// todo: implement a safe version of calculate_hash and IntMap
 type Trans = IntMap<Vec<(u64, BitVec)>>;
 // type RMap  = IntMap<RE>; // u64 -> RE reverse mapping
 type Finals = IntMap<BitVec>;
@@ -179,6 +180,14 @@ impl <'a> Regex<'a> {
             }
         }
     
+    }
+
+
+    pub fn parse_decode_regex(&self, s:&'a String) -> Option<U> {
+        match self.parse_regex(s) {
+            None => None, 
+            Some(bv) => Some(decode(self.init, &bv, s))
+        }
     }
 }
  

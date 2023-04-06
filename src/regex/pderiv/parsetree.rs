@@ -1,4 +1,5 @@
 
+#[derive(Debug)]
 pub enum U {
     NilU,
     LitU(char),

@@ -25,9 +25,9 @@ fn main() {
             let mut contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
             contents.pop();
             dbg!(contents.len());
-            match regex.parse_regex(&contents) {
+            match regex.parse_decode_regex(&contents) {
                 None => println!("match failed."),
-                Some(x) => println!("{:?}", x)
+                Some(x) => println!("mached")// println!("{:?}", x)
             };
             let time2 = SystemTime::now();
             println!("{:#?}", time2.duration_since(time1));
@@ -56,8 +56,8 @@ fn mkpat(n:i32) -> RE {
             // RE::Seq(Rc::new(acc),Rc::new(t.clone()))
             RE::Seq(Rc::new(t.clone()), Rc::new(acc))
         });
-        RE::Seq(Rc::new(fst),Rc::new(snd))
-        // RE::Seq(Rc::new(snd),Rc::new(fst))
+        // RE::Seq(Rc::new(fst),Rc::new(snd))
+        RE::Seq(Rc::new(snd),Rc::new(fst))
     } else {
         RE::Phi
     }
