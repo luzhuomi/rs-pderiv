@@ -25,7 +25,7 @@ fn main() {
             let mut contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
             contents.pop();
             dbg!(contents.len());
-            match regex.parse_decode_regex(&contents) {
+            match regex.parse_regex(&contents) {
                 None => println!("match failed."),
                 Some(x) => println!("mached")// println!("{:?}", x)
             };
