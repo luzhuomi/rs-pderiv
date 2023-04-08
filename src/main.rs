@@ -7,6 +7,7 @@ use rs_pderiv::regex::pderiv::parse::*;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
+
 fn main() {
     let time0 = SystemTime::now();
     let args: Vec<String> = env::args().collect();
@@ -36,6 +37,7 @@ fn main() {
     }
    
 }
+
 
 fn generate_re(n_arg:&String) -> RE {
     let n = n_arg.parse::<i32>().unwrap();
@@ -69,3 +71,39 @@ fn calculate_hash<T: Hash>(t: &T) -> u64 {
     t.hash(&mut s);
     s.finish()
 }
+
+// nom always backtrack
+/* 
+
+extern crate nom;
+use nom::{
+  IResult,
+  bytes::complete::{tag, take_while_m_n},
+  combinator::map_res,
+  branch::alt,
+  sequence::tuple, multi::{separated_list1, many1}
+};
+
+
+
+fn p_aaa(input:&str) -> IResult<&str, &str> {
+    tag("aaa")(input)
+}
+
+fn p_abc(input:&str) -> IResult<&str, &str> {
+    tag("abc")(input)
+}
+
+
+fn test_nom() -> () {
+    let (rest, matched) = alt((p_aaa, p_abc))("abc").expect("should match");
+    println!("{:?}", rest);
+    println!("{:?}", matched);
+}
+
+pub fn main() {
+    test_nom();
+}
+*/
+
+
