@@ -4,21 +4,25 @@ use super::ext::*;
 
 
 use std::{
-    env, fmt,
-    fs::File,
-    io::{self, Read},
+    fmt,
+    rc::Rc, io
 };
 
+
+
 use combine::{
+    parser,
     token,
     choice,
     error::ParseError,
     many, optional,
     parser::char::{char, digit},
     Parser, Stream,
-    parser::token::value,
-    parser::repeat::{sep_by1, many1},
+    parser::{token::value},
+    parser::{repeat::{sep_by1, many1}, sequence::Between}, between, attempt,
 };
+
+
 
 #[cfg(feature = "std")]
 use combine::{
@@ -43,7 +47,30 @@ where
     }
 }
 
-// a parser that that always success
+
+/* 
+pub enum RParser<Input> 
+    where
+    Input : Stream<Token = char>
+{
+    FromBetween(Rc<Between<Input, RParser<Input>, RParser<Input>, RParser<Input>>>)
+    FromSepBy1(Rc<SepBy1<>)
+}
+
+impl <Input> Parser<Input> for RParser<Input> 
+    where
+    Input : Stream<Token = char>
+{
+    type Output = (Ext, Input);
+    type PartialState = ();
+    fn parse(& mut self, input:Input) -> Result<(Self::Output,Input), Input::Error> {
+        match self {
+            RParser::FromBetween(btn) => btn.parse(input) 
+        }
+    }
+}
+*/
+
 
 pub fn parse_ext<Input>() -> impl Parser<Input, Output=Ext> 
     where
@@ -54,7 +81,8 @@ pub fn parse_ext<Input>() -> impl Parser<Input, Output=Ext>
     })
 }
 
-pub fn p_ere<Input>() -> impl Parser<Input, Output=Ext> 
+
+pub fn p_ere_<Input>() -> impl Parser<Input, Output=Ext> 
     where
         Input : Stream<Token = char>
 {
@@ -63,6 +91,17 @@ pub fn p_ere<Input>() -> impl Parser<Input, Output=Ext>
     })
     // value(Ext::Empty)
 }
+
+// magic macro to "fix" the opaque type issue
+parser!{
+    fn p_ere[Input]()(Input) -> Ext 
+    where 
+        [Input : Stream<Token = char>]
+    {
+        p_ere_()
+    }
+}
+
 
 pub fn p_branch<Input>() -> impl Parser<Input, Output = Ext> 
     where 
@@ -78,15 +117,15 @@ pub fn p_exp<Input>() -> impl Parser<Input, Output = Ext>
     where 
         Input : Stream<Token = char>
 {
-    choice((p_anchor(), p_atom()))    
+    choice((p_anchor(), p_atom())) 
 }
 
 pub fn p_anchor<Input>() -> impl Parser<Input, Output =Ext> 
     where
         Input : Stream<Token = char>
 {
-    choice((token('^').then( |s| { value(Ext::Carat)}), 
-                token('$').then(|s| { value(Ext::Dollar)})))
+    choice((token('^').then( |_s| { value(Ext::Carat)}), 
+                token('$').then(|_s| { value(Ext::Dollar)})))
 }
 
 pub fn p_atom<Input>() -> impl Parser<Input, Output = Ext> 
@@ -97,13 +136,41 @@ pub fn p_atom<Input>() -> impl Parser<Input, Output = Ext>
 }
 
 
+pub fn p_question_mark<Input>() -> impl Parser<Input, Output=char> 
+    where 
+        Input : Stream<Token= char>
+{
+    token('?')
+}
+
+pub fn p_colon<Input>() -> impl Parser<Input, Output=char> 
+    where 
+        Input : Stream<Token= char>
+{
+    token(':')
+}
+
+
 
 
 pub fn p_group<Input>() -> impl Parser<Input, Output = Ext>
     where 
         Input : Stream<Token = char> 
 {
-    value(Ext::Empty) // todo
+    let non_marking = (
+        p_question_mark::<Input>().then(| _qm | {
+            p_colon::<Input>().then(| _cl | {
+                p_ere()
+            })
+        })
+    ).map( | ext| { 
+        ext
+    });
+    let b = between(token('('), token(')'), choice((
+        attempt(non_marking),
+        p_ere().then(|x|{value(Ext::Grp(Rc::new(x)))})
+    )));
+    b
 }
 
 

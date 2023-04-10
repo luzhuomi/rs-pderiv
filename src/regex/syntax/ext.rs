@@ -3,7 +3,7 @@
  */
 use std::rc::Rc;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum Ext {
     Empty,
     GrpNonMarking(Rc<Ext>),
