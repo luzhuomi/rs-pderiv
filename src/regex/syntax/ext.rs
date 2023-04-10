@@ -1,7 +1,7 @@
 /**
  * external syntax tree
  */
-use std::rc::Rc;
+use std::{rc::Rc, collections::HashSet};
 
 #[derive(Debug, PartialEq)]
 pub enum Ext {
@@ -17,8 +17,8 @@ pub enum Ext {
     Carat,
     Dollar,
     Dot,
-    Any(Vec<char>),
-    NoneOf(Vec<char>),
+    Any(HashSet<char>),
+    NoneOf(HashSet<char>),
     Escape(char), // escaped character
     Char(char) // non-escaped character
 }

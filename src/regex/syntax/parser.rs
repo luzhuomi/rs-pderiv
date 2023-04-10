@@ -15,11 +15,11 @@ use combine::{
     token,
     choice,
     error::ParseError,
-    many, optional,
+    many, many1, optional,
     parser::char::{char, digit},
     Parser, Stream,
     parser::{token::value},
-    parser::{repeat::{sep_by1, many1}, sequence::Between}, between, attempt,
+    parser::{repeat::sep_by1, sequence::Between}, between, attempt,
 };
 
 
@@ -180,7 +180,7 @@ pub fn p_charclass<Input>() -> impl Parser<Input, Output = Ext>
     where 
         Input : Stream<Token = char> 
 {
-    token('[').then(| _lb | {
+    p_lbracket().then(| _lb | {
         choice((
             token('^').then( | _car| {
                 p_enum().then( | x | { value(Ext::NoneOf(x))})
@@ -191,30 +191,53 @@ pub fn p_charclass<Input>() -> impl Parser<Input, Output = Ext>
     })
 }
 
+
+pub fn p_lbracket<Input>() -> impl Parser<Input, Output=char> 
+    where 
+        Input : Stream<Token= char>
+{
+    token('[')
+}
+
+
+pub fn p_rbracket<Input>() -> impl Parser<Input, Output=char> 
+    where 
+        Input : Stream<Token= char>
+{
+    token(']')
+}
+
+
 // enum ends with ']'
-pub fn p_enum<Input>() -> impl Parser<Input, Output = Vec<char>> 
+pub fn p_enum<Input>() -> impl Parser<Input, Output = HashSet<char>> 
     where 
         Input : Stream<Token = char>
 {
     /* 
-    let p_initial_inner = choice((token(']'), token('-')));
+    let p_initial_inner = choice((p_rbracket(), token('-')));
         
     let p_initial = optional(p_initial_inner).then(|oi| {
         match oi {
-            None => value(""),
-            Some(v) => value(v) 
+            None => value(vec![]),
+            Some(v) => value(vec![v]) 
         }
     });
     
-    p_initial.then(|initial| {
-        many1(p_one_enum()).then(|chars|{
-            token("]").then(|_rb| {
+    let p = p_initial.map(|initial| {
+        many1::<Vec<_>,_,_>(p_one_enum()).then(move |cs|{
+            token(']').then(|_rb| {
                 let mut char_set:HashSet<char> = HashSet::new();
-                char_set.extend(initial);
+                char_set.extend(initial.iter());
+                for c in &cs {
+                    let cc = c.clone();
+                    char_set.extend(cc.iter());
+                }
+                value(char_set)
             })
         })
-    })*/
-    value(vec![])
+    });
+    p*/
+    value(HashSet::new())
 }
 
 pub fn p_one_enum<Input>() -> impl Parser<Input, Output =Vec<char>> 
