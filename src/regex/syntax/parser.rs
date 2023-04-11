@@ -213,7 +213,7 @@ pub fn p_enum<Input>() -> impl Parser<Input, Output = HashSet<char>>
     where 
         Input : Stream<Token = char>
 {
-    /* 
+    
     let p_initial_inner = choice((p_rbracket(), token('-')));
         
     let p_initial = optional(p_initial_inner).then(|oi| {
@@ -223,11 +223,11 @@ pub fn p_enum<Input>() -> impl Parser<Input, Output = HashSet<char>>
         }
     });
     
-    let p = p_initial.map(|initial| {
-        many1::<Vec<_>,_,_>(p_one_enum()).then(move |cs|{
-            token(']').then(|_rb| {
+    let p = p_initial.then(|initial:Vec<char>| {
+        many1::<HashSet<_>,_,_>(p_one_enum()).then(move |cs|{
+            token(']').with({
                 let mut char_set:HashSet<char> = HashSet::new();
-                char_set.extend(initial.iter());
+                char_set.extend(initial.clone().into_iter());
                 for c in &cs {
                     let cc = c.clone();
                     char_set.extend(cc.iter());
@@ -236,8 +236,8 @@ pub fn p_enum<Input>() -> impl Parser<Input, Output = HashSet<char>>
             })
         })
     });
-    p*/
-    value(HashSet::new())
+    p
+    // value(HashSet::new())
 }
 
 pub fn p_one_enum<Input>() -> impl Parser<Input, Output =Vec<char>> 
