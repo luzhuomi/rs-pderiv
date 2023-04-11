@@ -14,6 +14,8 @@ use combine::{
     parser,
     token,
     choice,
+    any,
+    unexpected_any,
     error::ParseError,
     many, many1, optional,
     parser::char::{char, digit},
@@ -237,22 +239,37 @@ pub fn p_enum<Input>() -> impl Parser<Input, Output = HashSet<char>>
         })
     });
     p
-    // value(HashSet::new())
 }
 
 pub fn p_one_enum<Input>() -> impl Parser<Input, Output =Vec<char>> 
     where
         Input : Stream<Token = char> 
 {
+    choice((p_range(), p_char_set()))
+}
+
+pub fn p_range<Input>() -> impl Parser<Input, Output = Vec<char>> 
+    where 
+        Input : Stream<Token = char>
+{
     value(vec![]) // todo
 }
 
+
+pub fn p_char_set<Input>() -> impl Parser<Input, Output = Vec<char>>
+    where
+        Input : Stream<Token = char> 
+{
+    value(vec![]) // todo
+}
 
 pub fn p_dot<Input>() -> impl Parser<Input, Output = Ext>
     where 
         Input : Stream<Token = char> 
 {
-    value(Ext::Empty) // todo
+    token('.').with(
+        value(Ext::Dot) 
+    )
 }
 
 
@@ -263,6 +280,58 @@ pub fn p_esc_char<Input>() -> impl Parser<Input, Output = Ext>
     value(Ext::Empty) // todo
 }
 
+
+pub fn p_esc_char_<Input>() -> impl Parser<Input, Output = char>
+    where
+        Input : Stream<Token = char>
+{
+    token('\\').with(
+        choice(
+            (attempt(p_tab())
+                ,attempt(p_return())
+                ,attempt(p_newline())
+                ,attempt(p_oct_ascii())
+                ,any()))
+    )
+}
+
+pub fn p_tab<Input>() -> impl Parser<Input, Output = char>
+    where 
+        Input : Stream<Token = char> 
+{
+    token('t').with(value('\t'))
+}
+
+pub fn p_return<Input>() -> impl Parser<Input, Output = char>
+    where 
+        Input : Stream<Token = char> 
+{
+    token('r').with(value('\r'))
+}
+
+pub fn p_newline<Input>() -> impl Parser<Input, Output = char>
+    where 
+        Input : Stream<Token = char>
+{
+    token('n').with(value('\n'))
+}
+    
+
+pub fn p_oct_ascii<Input>() -> impl Parser<Input, Output = char>
+    where 
+        Input : Stream<Token = char>
+{
+    /* 
+    (digit(), digit(), digit()).map( |(d1,d2,d3)| {
+        match (d2.to_digit(10), d3.to_digit(10)) {
+            (Some(v2), Some(v3)) => value(char::from_digit(v2 * 8 + v3, 10)),
+            // (_,_) => unexpected_any("p_oct_ascii parsed digits but they are actually not digit?")
+        } 
+    })
+    */
+    value(' ') // todo
+}
+    
 
 
 pub fn p_char<Input>() -> impl Parser<Input, Output = Ext>
