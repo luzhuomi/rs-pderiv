@@ -16,12 +16,11 @@ use combine::{
     choice,
     any,
     unexpected_any,
-    error::ParseError,
-    many, many1, optional,
-    parser::char::{char, digit},
+    many1, optional,
+    parser::char::{digit},
     Parser, Stream,
     parser::{token::value},
-    parser::{repeat::sep_by1, sequence::Between}, between, attempt, none_of, look_ahead,
+    parser::{repeat::sep_by1}, between, attempt, none_of, look_ahead,
 };
 
 
@@ -78,8 +77,7 @@ impl <Input> Parser<Input> for RParser<Input>
 
 pub fn parse_ext<Input>() -> impl Parser<Input, Output=Ext> 
     where
-        Input : Stream<Token = char>,
-        Input::Error: combine::error::ParseError<char, Input::Range, Input::Position>
+        Input : Stream<Token = char>
 {
     p_ere().map(| ext | {
         ext
@@ -89,8 +87,7 @@ pub fn parse_ext<Input>() -> impl Parser<Input, Output=Ext>
 
 pub fn p_ere_<Input>() -> impl Parser<Input, Output=Ext> 
     where
-        Input : Stream<Token = char>,
-        Input::Error: combine::error::ParseError<char, Input::Range, Input::Position>
+        Input : Stream<Token = char>
 {
     sep_by1(p_branch(), token('|')).map(|branches|{
         Ext::Or(branches)
@@ -111,8 +108,7 @@ parser!{
 
 pub fn p_branch<Input>() -> impl Parser<Input, Output = Ext> 
     where 
-        Input : Stream<Token = char>,
-        Input::Error: combine::error::ParseError<char, Input::Range, Input::Position>
+        Input : Stream<Token = char>
 {
    many1(p_exp()).map(|exps| {
         Ext::Concat(exps)
@@ -122,16 +118,14 @@ pub fn p_branch<Input>() -> impl Parser<Input, Output = Ext>
 
 pub fn p_exp<Input>() -> impl Parser<Input, Output = Ext> 
     where 
-        Input : Stream<Token = char>,
-        Input::Error: combine::error::ParseError<char, Input::Range, Input::Position>
+        Input : Stream<Token = char>
 {
     choice((p_anchor(), p_atom())) 
 }
 
 pub fn p_anchor<Input>() -> impl Parser<Input, Output =Ext> 
     where
-        Input : Stream<Token = char>,
-        Input::Error: combine::error::ParseError<char, Input::Range, Input::Position>
+        Input : Stream<Token = char>
 {
     choice((token('^').then( |_s| { value(Ext::Carat)}), 
                 token('$').then(|_s| { value(Ext::Dollar)})))
@@ -139,8 +133,7 @@ pub fn p_anchor<Input>() -> impl Parser<Input, Output =Ext>
 
 pub fn p_atom<Input>() -> impl Parser<Input, Output = Ext> 
     where 
-        Input : Stream<Token = char> ,
-        Input::Error: combine::error::ParseError<char, Input::Range, Input::Position>
+        Input : Stream<Token = char>
 {
     choice((p_group(), p_charclass(), p_dot(), p_esc_char(), p_char()))
 }
@@ -148,16 +141,14 @@ pub fn p_atom<Input>() -> impl Parser<Input, Output = Ext>
 
 pub fn p_question_mark<Input>() -> impl Parser<Input, Output=char> 
     where 
-        Input : Stream<Token= char>,
-        Input::Error: combine::error::ParseError<char, Input::Range, Input::Position>
+        Input : Stream<Token= char>
 {
     token('?')
 }
 
 pub fn p_colon<Input>() -> impl Parser<Input, Output=char> 
     where 
-        Input : Stream<Token= char>,
-        Input::Error: combine::error::ParseError<char, Input::Range, Input::Position>
+        Input : Stream<Token= char>
 {
     token(':')
 }
@@ -167,8 +158,7 @@ pub fn p_colon<Input>() -> impl Parser<Input, Output=char>
 
 pub fn p_group<Input>() -> impl Parser<Input, Output = Ext>
     where 
-        Input : Stream<Token = char> ,
-        Input::Error: combine::error::ParseError<char, Input::Range, Input::Position>
+        Input : Stream<Token = char>
 {
     let non_marking = (
         p_question_mark::<Input>().then(| _qm | {
@@ -191,8 +181,7 @@ pub fn p_group<Input>() -> impl Parser<Input, Output = Ext>
 
 pub fn p_charclass<Input>() -> impl Parser<Input, Output = Ext>
     where 
-        Input : Stream<Token = char> ,
-        Input::Error: combine::error::ParseError<char, Input::Range, Input::Position>
+        Input : Stream<Token = char>
 {
     p_lbracket().then(| _lb | {
         choice((
@@ -208,8 +197,7 @@ pub fn p_charclass<Input>() -> impl Parser<Input, Output = Ext>
 
 pub fn p_lbracket<Input>() -> impl Parser<Input, Output=char> 
     where 
-        Input : Stream<Token= char>,
-        Input::Error: combine::error::ParseError<char, Input::Range, Input::Position>
+        Input : Stream<Token= char>
 {
     token('[')
 }
@@ -217,8 +205,7 @@ pub fn p_lbracket<Input>() -> impl Parser<Input, Output=char>
 
 pub fn p_rbracket<Input>() -> impl Parser<Input, Output=char> 
     where 
-        Input : Stream<Token= char>,
-        Input::Error: combine::error::ParseError<char, Input::Range, Input::Position>
+        Input : Stream<Token= char>
 {
     token(']')
 }
@@ -227,8 +214,7 @@ pub fn p_rbracket<Input>() -> impl Parser<Input, Output=char>
 // enum ends with ']'
 pub fn p_enum<Input>() -> impl Parser<Input, Output = HashSet<char>> 
     where 
-        Input : Stream<Token = char>,
-        Input::Error: combine::error::ParseError<char, Input::Range, Input::Position>
+        Input : Stream<Token = char>
 {
     
     let p_initial_inner = choice((p_rbracket(), token('-')));
@@ -258,16 +244,14 @@ pub fn p_enum<Input>() -> impl Parser<Input, Output = HashSet<char>>
 
 pub fn p_one_enum<Input>() -> impl Parser<Input, Output =Vec<char>> 
     where
-        Input : Stream<Token = char> ,
-        Input::Error: combine::error::ParseError<char, Input::Range, Input::Position>
+        Input : Stream<Token = char>
 {
     choice((p_range(), p_char_set()))
 }
 
 pub fn p_range<Input>() -> impl Parser<Input, Output = Vec<char>> 
     where 
-        Input : Stream<Token = char>,
-        Input::Error: combine::error::ParseError<char, Input::Range, Input::Position>
+        Input : Stream<Token = char>
 {
     attempt( 
         choice((attempt(p_esc_char_()), none_of(vec![']']))).then(|start|{
@@ -281,35 +265,27 @@ pub fn p_range<Input>() -> impl Parser<Input, Output = Vec<char>>
 }
 
 
-pub fn p_error<Input,S>(msg:S) -> impl Parser<Input, Output = Vec<char>> 
-    where
-        Input : Stream<Token = char>,
-        Input::Error: combine::error::ParseError<char, Input::Range, Input::Position>,
-        S: combine::error::ParseError<char, Input::Range, Input::Position>
-{
-    unexpected_any(msg)
-}
-
-
-
 pub fn p_char_set<Input>() -> impl Parser<Input, Output = Vec<char>>
     where
-        Input : Stream<Token = char> ,
-        Input::Error: combine::error::ParseError<char, Input::Range, Input::Position>
+        Input : Stream<Token = char>
 {
     choice((attempt(p_esc_char_()), none_of(vec![']']))).then(|c| {
-        if c == '-' {
-            choice((look_ahead(token(']')).with(value(true)), value(false))).then(|at_end| {
-                if !at_end {
-                    
-                    unexpected_any("p_char_set failed: a dash is in the wrong place in a bracket.")
-                } else {
-                    value(vec![c])
-                }
-            })
-            
-        } else {
-            value(vec![c])
+        match c {
+            '-' => {
+                // it was 
+                /* 
+                choice((look_ahead(token(']')).with(value(true)), value(false))).then(|at_end| {
+                    if !at_end {
+                        
+                        unexpected_any("p_char_set failed: a dash is in the wrong place in a bracket.")
+                    } else {
+                        value(vec![c])
+                    }
+                })
+                */
+                choice((look_ahead(token(']')).with(value(vec![c])), unexpected_any("p_char_set failed: a dash is in the wrong place in a bracket."))).left()
+            },
+            _ =>  value(vec![c]).right()
         }
     })
 }
@@ -403,8 +379,13 @@ pub fn p_char<Input>() -> impl Parser<Input, Output = Ext>
     where 
         Input : Stream<Token = char> 
 {
-    value(Ext::Empty) // todo
+    let specials:Vec<char> = "^.[$()|*+?{\\".chars().collect();
+    none_of(specials).then(|c| {
+        value(Ext::Char(c))
+    })
 }
+
+
 
 /* 
 extern crate nom;
