@@ -413,7 +413,15 @@ pub fn p_post_anchor_or_atom<Input>() -> impl Parser <Input, Output = PostAnchor
     where 
         Input : Stream<Token = char> 
 {
-    value(PostAnchorOrAtom::Nothing) // todo
+    // value(PostAnchorOrAtom::Nothing) // todo
+    choice((
+        choice((attempt(token('?').with(token('?').with(value(PostAnchorOrAtom::Opt(false))))), token('?').with(value(PostAnchorOrAtom::Opt(true))))),
+        choice((attempt(token('+').with(token('?').with(value(PostAnchorOrAtom::Plus(false))))), token('+').with(value(PostAnchorOrAtom::Plus(true))))),
+        choice((attempt(token('*').with(token('?').with(value(PostAnchorOrAtom::Star(false))))), token('*').with(value(PostAnchorOrAtom::Star(true))))),
+        p_bound_non_greedy(),
+        p_bound(),
+        value(PostAnchorOrAtom::Nothing)
+    ))
 }
 
 pub fn p_bound_non_greedy<Input>() -> impl Parser<Input, Output = PostAnchorOrAtom>
@@ -424,6 +432,17 @@ pub fn p_bound_non_greedy<Input>() -> impl Parser<Input, Output = PostAnchorOrAt
         value(PostAnchorOrAtom::Bound(low,hi,false))
     }))
 }
+
+
+pub fn p_bound<Input>() -> impl Parser<Input, Output = PostAnchorOrAtom>
+    where
+        Input : Stream<Token = char>
+{
+    attempt(between(token('{'), token('}'), p_bound_spec()).then(|(low, hi)|{
+        value(PostAnchorOrAtom::Bound(low,hi,true))
+    }))
+}
+
 
 pub fn p_bound_spec<Input>() -> impl Parser<Input, Output = (u64, Option<u64>)>
     where
