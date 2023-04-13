@@ -121,7 +121,19 @@ pub fn p_exp<Input>() -> impl Parser<Input, Output = Ext>
         Input : Stream<Token = char>
 {
     choice((p_anchor(), p_atom())).then(|aoa| {
-        p_post_anchor_or_atom(aoa)
+        // won't work, see note Z
+        // p_post_anchor_or_atom(aoa)
+        p_post_anchor_or_atom().map(move |bound|{
+            // apply aoa's clone to bound
+            // aoa has Rc components, hence cheap to clone, i.e shallow clone
+            match bound {
+                PostAnchorOrAtom::Nothing => aoa.clone(),
+                PostAnchorOrAtom::Bound(l,h, b) => Ext::Bound(Rc::new(aoa.clone()), l, h, b),
+                PostAnchorOrAtom::Opt(b) => Ext::Opt(Rc::new(aoa.clone()), b),
+                PostAnchorOrAtom::Plus(b) => Ext::Plus(Rc::new(aoa.clone()), b),
+                PostAnchorOrAtom::Star(b) => Ext::Star(Rc::new(aoa.clone()), b)
+            }
+        })
     })
 }
 
@@ -387,6 +399,72 @@ pub fn p_char<Input>() -> impl Parser<Input, Output = Ext>
     })
 }
 
+#[derive(Clone)]
+pub enum PostAnchorOrAtom {
+    Opt(bool),
+    Plus(bool),
+    Star(bool),
+    Bound(u64, Option<u64>, bool),
+    Nothing
+}
+
+
+pub fn p_post_anchor_or_atom<Input>() -> impl Parser <Input, Output = PostAnchorOrAtom> 
+    where 
+        Input : Stream<Token = char> 
+{
+    value(PostAnchorOrAtom::Nothing) // todo
+}
+
+pub fn p_bound_non_greedy<Input>() -> impl Parser<Input, Output = PostAnchorOrAtom>
+    where
+        Input : Stream<Token = char>
+{
+    attempt(between(token('{'), string("}?"), p_bound_spec()).then(|(low, hi)|{
+        value(PostAnchorOrAtom::Bound(low,hi,false))
+    }))
+}
+
+pub fn p_bound_spec<Input>() -> impl Parser<Input, Output = (u64, Option<u64>)>
+    where
+        Input : Stream<Token = char>
+{
+    many1::<String, Input,_>(digit()).then(|low_s|{
+        let low_res = low_s.parse::<u64>();
+        match low_res {
+            Ok(low) => {
+                choice((attempt(token(',').with(
+                    many::<String,Input,_>(digit()).then(move |high_s| {
+                        let high_res = high_s.parse::<u64>();
+                        match high_res {
+                            Ok(high) => {
+                                if low <= high {
+                                    value((low, Some(high)))
+                                } else {
+                                    value((low, Some(low)))
+                                }        
+                            },
+                            Err(e) => {
+                                value((low, None))
+                            }
+                        }
+                    })
+                )), value((low, None)))).left()
+            }
+            Err(e) => {
+                unexpected_any("p_bound_spec failed: a dash is in the wrong place in a bracket.").right()
+            }
+        }
+
+    })
+}
+
+
+// NOTE: Z
+// the following won't compile unless Ext impl Copy, because atom is constructed before the postfix is parsed.
+// the parsers have to carry around the atom value every where, its life time is unknown.
+
+/*
 pub fn p_post_anchor_or_atom<Input>(atom:Ext) -> impl Parser<Input, Output = Ext>
     where
         Input : Stream<Token = char> 
@@ -443,6 +521,8 @@ pub fn p_bound_spec<'a, Input>(atom:Ext, b:bool) -> impl Parser<Input, Output = 
 
     })
 }
+
+ */
 
 
 /* 
