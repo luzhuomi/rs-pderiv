@@ -22,7 +22,6 @@ pub enum Ext {
     Escape(char), // escaped character
     Char(char) // non-escaped character
 }
-
 impl Clone for Ext {
 
     fn clone(&self) -> Self {
@@ -46,3 +45,4 @@ impl Clone for Ext {
         }
     }
 }
+

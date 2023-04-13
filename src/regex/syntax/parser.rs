@@ -16,8 +16,8 @@ use combine::{
     choice,
     any,
     unexpected_any,
-    many1, optional,
-    parser::char::{digit},
+    many, many1, optional,
+    parser::char::{digit,string},
     Parser, Stream,
     parser::{token::value},
     parser::{repeat::sep_by1}, between, attempt, none_of, look_ahead,
@@ -120,7 +120,9 @@ pub fn p_exp<Input>() -> impl Parser<Input, Output = Ext>
     where 
         Input : Stream<Token = char>
 {
-    choice((p_anchor(), p_atom())) 
+    choice((p_anchor(), p_atom())).then(|aoa| {
+        p_post_anchor_or_atom(aoa)
+    })
 }
 
 pub fn p_anchor<Input>() -> impl Parser<Input, Output =Ext> 
@@ -385,6 +387,62 @@ pub fn p_char<Input>() -> impl Parser<Input, Output = Ext>
     })
 }
 
+pub fn p_post_anchor_or_atom<Input>(atom:Ext) -> impl Parser<Input, Output = Ext>
+    where
+        Input : Stream<Token = char> 
+{
+    value(atom) // todo
+}
+
+
+pub fn p_bound_non_greedy<Input>(atom:Ext) -> impl Parser<Input, Output= Ext> 
+    where
+        Input : Stream<Token = char> 
+{
+    attempt(between(token('{'), string("}?"), p_bound_spec(atom, false)))
+}
+
+
+pub fn p_bound_spec<'a, Input>(atom:Ext, b:bool) -> impl Parser<Input, Output = Ext>
+    where
+        Input : Stream<Token = char>
+{
+    let atom_r = &atom;
+    many1::<Vec<char>,Input,_>(digit()).then(move |low_v|{
+        let low_s:String = low_v.into_iter().collect();
+        let low_res = low_s.parse::<u64>();
+        match low_res {
+            Ok(low) => {
+                choice((attempt(token(',').with(
+                    many::<Vec<char>,Input,_>(digit()).then(move |high_v| {
+                        if high_v.len() > 0 {
+                            let high_s:String = high_v.into_iter().collect();
+                            let high_res = high_s.parse::<u64>();
+                            match high_res {
+                                Ok(high) => {
+                                    if low <= high {
+                                        value(Ext::Bound(atom_r.clone().into(), low, Some(high), b))
+                                    } else {
+                                        value(Ext::Bound(atom_r.clone().into(), low, Some(low), b))
+                                    }        
+                                },
+                                Err(e) => {
+                                    value(Ext::Bound(atom_r.clone().into(), low, Some(low), b))
+                                }
+                            }
+                        } else {
+                            value(Ext::Bound(atom_r.clone().into(), low, None, b))
+                        }
+                    })
+                )), value(Ext::Bound(atom_r.clone().into(),low,Some(low),b )))).left()
+            }
+            Err(e) => {
+                unexpected_any("p_bound_spec failed: a dash is in the wrong place in a bracket.").right()
+            }
+        }
+
+    })
+}
 
 
 /* 
