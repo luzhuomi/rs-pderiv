@@ -78,10 +78,8 @@ fn calculate_hash<T: Hash>(t: &T) -> u64 {
 extern crate nom;
 use nom::{
   IResult,
-  bytes::complete::{tag, take_while_m_n},
-  combinator::map_res,
-  branch::alt,
-  sequence::tuple, multi::{separated_list1, many1}
+  bytes::complete::{tag},
+  branch::alt
 };
 
 
