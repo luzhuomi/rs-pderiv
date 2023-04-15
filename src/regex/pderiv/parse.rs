@@ -18,9 +18,9 @@ type Finals = IntMap<BitVec>;
  * TODO: check whether the .clone()'s are necessary
  */
 #[derive(Debug)]
-pub struct Regex <'a> {
+pub struct Regex {
     pub trans:Trans, 
-    init: &'a RE, 
+    init: RE, 
     finals: Finals 
 }
 
@@ -108,7 +108,7 @@ pub fn build_regex(r:&RE) -> Regex { // todo: GET RID OF ALL_STATES, WHICH IS ON
         im.insert(hash_r, emp_code(r));
         im
     });
-    Regex{trans : trans, init : r, finals:fins}
+    Regex{trans : trans, init : r.clone(), finals:fins}
 }
 
 
@@ -127,8 +127,8 @@ fn aggr(end:BitVec, path:Rc<List<&BitVec>>) -> BitVec {
     })
 } 
 
-impl <'a> Regex<'a> {
-    pub fn parse_regex(&self, s:&'a String) -> Option<BitVec> {
+impl  Regex {
+    pub fn parse_regex(&self, s:&String) -> Option<BitVec> {
         // each rbc is the current state and the reversed bit vec path back to the start
         fn go<'a>(rbc:Vec<(u64,Rc<Path>)>, trans:&Trans, finals:&Finals, s:&str) -> Option<BitVec> {
             if s.len() == 0 {
@@ -183,10 +183,10 @@ impl <'a> Regex<'a> {
     }
 
 
-    pub fn parse_decode_regex(&self, s:&'a String) -> Option<U> {
+    pub fn parse_decode_regex(&self, s:&String) -> Option<U> {
         match self.parse_regex(s) {
             None => None, 
-            Some(bv) => Some(decode(self.init, &bv, s))
+            Some(bv) => Some(decode(&self.init, &bv, s))
         }
     }
 }

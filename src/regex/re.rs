@@ -142,7 +142,7 @@ pub fn nub_vec<T:Clone+Hash+Eq>(v:&Vec<T>)-> Vec<T> {
 pub fn nub_vec_fst<T:Clone+Hash+Eq, S>(v:Vec<(T,S)>)-> Vec<(T,S)> {
     let empty_seen = HashSet::new();
     let empty_res = Vec::new();
-    let (seen, res) = v.into_iter().fold( (empty_seen, empty_res), | (mut seen,mut res), (t,s)|
+    let (_seen, res) = v.into_iter().fold( (empty_seen, empty_res), | (mut seen,mut res), (t,s)|
         {
             if !seen.contains(&t) { 
                 seen.insert(t.clone());
@@ -159,7 +159,7 @@ pub fn nub_vec_fst<T:Clone+Hash+Eq, S>(v:Vec<(T,S)>)-> Vec<(T,S)> {
 pub fn nub_vec_fst_u64<S>(v:Vec<(u64,S)>)-> Vec<(u64,S)> {
     let empty_seen = IntMap::new();
     let empty_res = Vec::new();
-    let (seen, res) = v.into_iter().fold( (empty_seen, empty_res), | (mut seen,mut res), (t,s)|
+    let (_seen, res) = v.into_iter().fold( (empty_seen, empty_res), | (mut seen,mut res), (t,s)|
         {
             if !seen.contains_key(t) { 
                 seen.insert(t,());

@@ -4,8 +4,7 @@ use super::ext::*;
 
 
 use std::{
-    fmt,
-    rc::Rc, io, collections::HashSet
+    rc::Rc, collections::HashSet
 };
 
 
@@ -20,67 +19,17 @@ use combine::{
     parser::char::{digit,string},
     Parser, Stream,
     parser::{token::value},
-    parser::{repeat::sep_by1}, between, attempt, none_of, look_ahead,
+    parser::{repeat::sep_by1}, between, attempt, none_of, look_ahead, eof,
 };
 
-
-
-#[cfg(feature = "std")]
-use combine::{
-    stream::{easy, position::SourcePosition},
-    EasyParser,
-};
-
-
-enum Error<E> {
-    Io(io::Error),
-    Parse(E),
-}
-
-
-impl<E> fmt::Display for Error<E>
-where
-    E: fmt::Display,
-{
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match *self {
-            Error::Io(ref err) => write!(f, "{}", err),
-            Error::Parse(ref err) => write!(f, "{}", err),
-        }
-    }
-}
-
-
-/* 
-pub enum RParser<Input> 
-    where
-    Input : Stream<Token = char>
-{
-    FromBetween(Rc<Between<Input, RParser<Input>, RParser<Input>, RParser<Input>>>)
-    FromSepBy1(Rc<SepBy1<>)
-}
-
-impl <Input> Parser<Input> for RParser<Input> 
-    where
-    Input : Stream<Token = char>
-{
-    type Output = (Ext, Input);
-    type PartialState = ();
-    fn parse(& mut self, input:Input) -> Result<(Self::Output,Input), Input::Error> {
-        match self {
-            RParser::FromBetween(btn) => btn.parse(input) 
-        }
-    }
-}
-*/
 
 
 pub fn parse_ext<Input>() -> impl Parser<Input, Output=Ext> 
     where
         Input : Stream<Token = char>
 {
-    p_ere().map(| ext | {
-        ext
+    p_ere().then(| ext | {
+        eof().with(value(ext))
     })
 }
 
@@ -463,14 +412,14 @@ pub fn p_bound_spec<Input>() -> impl Parser<Input, Output = (u64, Option<u64>)>
                                     value((low, Some(low)))
                                 }        
                             },
-                            Err(e) => {
+                            Err(_e) => {
                                 value((low, None))
                             }
                         }
                     })
                 )), value((low, None)))).left()
             }
-            Err(e) => {
+            Err(_e) => {
                 unexpected_any("p_bound_spec failed: a dash is in the wrong place in a bracket.").right()
             }
         }

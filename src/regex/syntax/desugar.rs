@@ -1,7 +1,5 @@
 
-use std::collections::HashSet;
 use std::rc::Rc;
-
 use super::ext::*;
 use super::super::re::*;
 
@@ -60,6 +58,7 @@ pub fn simp_ext(e:&Ext) -> Ext {
 
 // convert an external regex syntax to internal re syntax
 // for now the greedy flags are ignored.
+// unanchored expressions are treated as anchored.
 pub fn ext_to_re(e:&Ext) -> Result<RE,String> {
     match e {
         Ext::Empty => Ok(RE::Eps),
@@ -87,30 +86,30 @@ pub fn ext_to_re(e:&Ext) -> Result<RE,String> {
             }
             Ok(re)
         },
-        Ext::Opt(e, greedy) => { 
+        Ext::Opt(e, _greedy) => { 
             let re = ext_to_re(e)?;
             Ok(choice!(re, RE::Eps))
         },
-        Ext::Plus(e, greedy) => {
+        Ext::Plus(e, _greedy) => {
             let re = ext_to_re(e)?;
             let re_clone = re.clone();
             Ok(seq!(re, star!(re_clone)))
         },
-        Ext::Star(e, greedy) => {
+        Ext::Star(e, _greedy) => {
             let re = ext_to_re(e)?;
             Ok(star!(re))
         },
-        Ext::Bound(e, lb, None, greedy) => {
+        Ext::Bound(e, lb, None, _greedy) => {
             let mut re = star!(ext_to_re(e)?);
-            for i in 0..*lb {
+            for _i in 0..*lb {
                 let re2 = ext_to_re(e)?;
                 re = seq!(re2, re)
             }
             Ok(re)
         },
-        Ext::Bound(e, lb, Some(ub), greedy) => {
+        Ext::Bound(e, lb, Some(ub), _greedy) => {
             let mut re = RE::Phi;
-            for i in 0..*lb {
+            for _i in 0..*lb {
                 let re2 = ext_to_re(e)?;
                 if re == RE::Phi {
                     re = re2;
@@ -118,7 +117,7 @@ pub fn ext_to_re(e:&Ext) -> Result<RE,String> {
                     re = seq!(re2, re)
                 }
             }
-            for j in *lb..*ub {
+            for _j in *lb..*ub {
                 let re3 = choice!(ext_to_re(e)?, RE::Eps);
                 re = seq!(re, re3)
             }

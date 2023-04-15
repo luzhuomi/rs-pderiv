@@ -1,7 +1,6 @@
 
 use intmap::IntMap;
 use std::collections::HashSet;
-use std::iter::{Chain, empty};
 use std::rc::Rc;
 use bitvec::prelude::*;
 use super::super::re::*;
@@ -97,9 +96,6 @@ pub fn build_regex<'a> (r:&'a RE) -> Regex {
     Regex{trans, init : calculate_hash(r), finals:fins}
 }
 
-use std::slice::Iter;
-use std::iter::FlatMap;
-use std::iter::Map;
 use std::vec::IntoIter;
 
 
@@ -177,20 +173,17 @@ impl <'a> Clone for CoerceIterator<'a>
 
 impl Regex {
     pub fn parse_regex<'a>(&'a self, s:&String) -> Option<BitVec>{
-        match self {
-            Regex { trans, init, finals } => {
-                let empty_bv = BitVec::new();
-                let rbc_vec = vec![(init.clone(),empty_bv)];
-                let init_rbc = rbc_vec.into_iter();
-                let init_iter = CoerceIterator::FromIntoIter(init_rbc);
-                let mut result =  self.go(init_iter,  &s);
-                match result.next() {
-                    None => None,
-                    Some(bv) => {
-                        let r = bv.clone();
-                        Some(r) // Some(bv)
-                    }
-                }
+        let init = &self.init;
+        let empty_bv = BitVec::new();
+        let rbc_vec = vec![(init.clone(),empty_bv)];
+        let init_rbc = rbc_vec.into_iter();
+        let init_iter = CoerceIterator::FromIntoIter(init_rbc);
+        let mut result =  self.go(init_iter,  &s);
+        match result.next() {
+            None => None,
+            Some(bv) => {
+                let r = bv.clone();
+                Some(r) // Some(bv)
             }
         }
     
