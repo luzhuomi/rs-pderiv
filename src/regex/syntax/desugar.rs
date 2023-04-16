@@ -108,10 +108,10 @@ pub fn ext_to_re(e:&Ext) -> Result<RE,String> {
             Ok(re)
         },
         Ext::Bound(e, lb, Some(ub), _greedy) => {
-            let mut re = RE::Phi;
+            let mut re = RE::Eps;
             for _i in 0..*lb {
                 let re2 = ext_to_re(e)?;
-                if re == RE::Phi {
+                if re == RE::Eps {
                     re = re2;
                 } else {
                     re = seq!(re2, re)
@@ -119,7 +119,11 @@ pub fn ext_to_re(e:&Ext) -> Result<RE,String> {
             }
             for _j in *lb..*ub {
                 let re3 = choice!(ext_to_re(e)?, RE::Eps);
-                re = seq!(re, re3)
+                if re == RE::Eps {
+                    re = re3;
+                } else {
+                    re = seq!(re, re3)
+                }
             }
             Ok(re)
         },

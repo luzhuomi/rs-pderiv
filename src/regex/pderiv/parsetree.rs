@@ -1,5 +1,8 @@
 
-#[derive(Debug)]
+
+///
+/// 
+#[derive(Debug, PartialEq)]
 pub enum U {
     NilU,
     LitU(char),

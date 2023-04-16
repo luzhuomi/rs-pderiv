@@ -73,3 +73,19 @@ fn test_parse_abaac2() {
     }
 }
 
+
+#[test]
+fn test_parse_sg_02() {
+    use RE::*;
+    let r = seq!(choice!(choice!(Lit('g'), Lit('s')), Eps), choice!(choice!(Lit('g'), Lit('s')), Eps));
+    let regex = build_regex(&r);
+    let result = regex.parse_regex(&String::from("sg"));
+    match result {
+        None => assert_eq!(1,2),
+        Some(bv) => {
+            println!("{:?}",bv);
+            assert_eq!(bv,bitvec![0,1,0])
+        }
+       
+    }
+}
