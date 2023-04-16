@@ -130,7 +130,9 @@ pub fn ext_to_re(e:&Ext) -> Result<RE,String> {
             ext_to_re(&Ext::Or(all_chars))
         }
         Ext::Any(chars) => {
-            let lits = chars.iter().map(|c| {Ext::Char(*c)}).collect();
+            let mut chars_cloned:Vec<char> = chars.clone().into_iter().collect();
+            chars_cloned.sort();
+            let lits = chars_cloned.into_iter().map(|c| {Ext::Char(c)}).collect();
             ext_to_re(&Ext::Or(lits))
         },
         Ext::NoneOf(chars) => {

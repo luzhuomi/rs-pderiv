@@ -1,3 +1,4 @@
+#![recursion_limit = "256"]
 pub mod regex;
 pub mod test;
 use std::result::Result;
