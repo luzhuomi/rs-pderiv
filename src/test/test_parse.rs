@@ -84,7 +84,7 @@ fn test_parse_sg_02() {
         None => assert_eq!(1,2),
         Some(bv) => {
             println!("{:?}",bv);
-            assert_eq!(bv,bitvec![0,1,0])
+            assert_eq!(bv,bitvec![0,1,0,0])
         }
        
     }

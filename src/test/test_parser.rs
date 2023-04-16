@@ -16,7 +16,7 @@ fn test_parser_ab_or_c_star_d_plus() {
     let result = parse_ext().parse(input);
     match result {
         Err(err) => print!("{:?}", err),
-        Ok((ext, rest)) => print!("{:?}", ext) 
+        Ok((ext, _rest)) => print!("{:?}", ext) 
     }
 }
 
@@ -33,7 +33,7 @@ fn test_parser_us_addr() {
     let result = parse_ext().parse(input);
     match result {
         Err(err) => print!("{:?}", err),
-        Ok((ext, rest)) => assert_eq!(expected, ext) 
+        Ok((ext, _rest)) => assert_eq!(expected, ext) 
     }
 }
 

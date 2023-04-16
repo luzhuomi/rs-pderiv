@@ -1,10 +1,10 @@
 
 
-///
+/// the parse tree of regex matching result.
 /// 
 #[derive(Debug, PartialEq)]
 pub enum U {
-    NilU,
+    NilU,  
     LitU(char),
     PairU(Box<U>,Box<U>),
     LeftU(Box<U>),

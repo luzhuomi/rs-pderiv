@@ -154,8 +154,13 @@ impl PDCached {
                             ).chain(
                                 vs.into_iter().map(|(v,mut bu)|{
                                     let mut emp = emp_code(r1);
-                                    emp.append(& mut bu);     
-                                    (v,emp)
+                                    // emp.append(& mut bu);
+                                    // (v,emp)
+                                    // we store the bits from right to left, since during the match, we keep the path is the bitvec reversed for space efficiency, 
+                                    // so that the prefix can be shared. For details refer to the parse.rs parse_regex()
+                                    bu.append(& mut emp);
+                                    (v, bu)
+                                    
                                 })
                             ).collect();
                             let nubbed = nub_vec_fst(res);
@@ -176,11 +181,15 @@ impl PDCached {
                         let vs = self.pderiv_bc(r2, l);
                         let res: Vec<(RE, BitVec)>  = ts.into_iter().map(|(t,bv)|{
                             let mut bv1 = bv;
-                            bv1.insert(0, false);
+                            // bv1.insert(0, false);
+                            // we store the bits from right to left, since during the match, we keep the path is the bitvec reversed for space efficiency, 
+                            // so that the prefix can be shared. For details refer to the parse.rs parse_regex()
+                            bv1.push(false);
                             (t,bv1)
                         }).chain(vs.into_iter().map(|(v, bu)| {
                             let mut bu1 = bu;
-                            bu1.insert(0, true);
+                            // bu1.insert(0, true);
+                            bu1.push(true);
                             (v,bu1)
                         })).collect();
                         let nubbed = nub_vec_fst(res);
@@ -191,7 +200,8 @@ impl PDCached {
                         let ts = self.pderiv_bc(r1,l);
                         let res:Vec<(RE,BitVec)> = ts.into_iter().map( |(t,bv)|{
                             let mut bv1 = bv;
-                            bv1.insert(0, false);
+                            // bv1.insert(0, false);
+                            bv1.push(false);
                             (RE::Seq(Rc::new(t),Rc::new(r.clone())),bv1)
                         }).collect();
                         let nubbed = nub_vec_fst(res);

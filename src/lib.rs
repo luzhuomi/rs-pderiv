@@ -70,7 +70,7 @@ pub fn compile<'a>(s:&str) -> Result<CompiledRegex, String> {
 /// println!("{:?}", regex.re);
 /// let input = String::from("sg");
 /// match regex.parse(&input) {
-///     Some(u) => assert_eq!(u, U::PairU(Box::new(U::LitU('s')), Box::new(U::LitU('g')))),
+///     Some(u) => assert_eq!(u, PairU(Box::new(LeftU(Box::new(RightU(Box::new(LitU('s')))))), Box::new(LeftU(Box::new(LeftU(Box::new(LitU('g')))))))),
 ///     None => panic!("matched failed, no parse tree generated.")
 /// }
 /// ```
