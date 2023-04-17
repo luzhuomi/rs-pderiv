@@ -140,6 +140,7 @@ impl  Regex {
                             let mut bc2 = aggr(bc1.clone(), path); // just need to clone 1
                             bc2.reverse();
                             res = Some(bc2);
+                            break;
                         }
                     }
                 }

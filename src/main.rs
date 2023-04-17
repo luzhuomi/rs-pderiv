@@ -23,8 +23,7 @@ fn main() {
             println!("built: {}", cnt(&regex));
             let time1 = SystemTime::now();
             println!("{:#?}", time1.duration_since(time0));
-            let mut contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
-            contents.pop();
+            let contents = fs::read_to_string(file_path).expect("Should have been able to read the file");
             dbg!(contents.len());
             match regex.parse_regex(&contents) {
                 None => println!("match failed."),
