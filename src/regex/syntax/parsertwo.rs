@@ -1,7 +1,8 @@
 extern crate combine;
 /* 
+use combine::RangeStreamOnce;
 use combine::{
-    between, choice, many, many1, optional, parser, satisfy, sep_by, token, Parser, Stream, ParseError, StdParseResult, parser::char::digit
+    between, choice, many, many1, optional, parser, satisfy, sep_by, token, Parser, Stream, ParseError, StdParseResult, parser::char::digit, RangeStream, error::StreamError
 };
 use lazy_static::lazy_static;
 use std::collections::HashSet;
@@ -163,7 +164,8 @@ where
 
 fn postfix<Input>(a: Ext) -> impl Parser<Input, Output = Ext>
 where
-    Input: Stream<Token = char>,
+    Input: Stream<Token = char> + RangeStreamOnce,
+    Input::Error: ParseError<char, Input::Range, Input::Position, StreamError = Input::Error> + StreamError<char, Input::Range>,
 {
     choice((
         optional((
@@ -236,22 +238,19 @@ impl From<ParseIntError> for IntParseError {
 
 fn natural<Input>() -> impl Parser<Input, Output = u64>
 where
-    Input: Stream<Token = char>,
-    Input::Error: ParseError<char, Input::Range, Input::Position, StreamError = IntParseError>,
+    Input: RangeStream<Token = char>,
+    Input::Error: ParseError<char, Input::Range, Input::Position, StreamError = Input::Error> + StreamError<char, Input::Range>,
 {
     many1(digit())
         .map(|chars: Vec<char>| chars.into_iter().collect::<String>())
-        .with(parser(|input: &mut Input| {
-            let digits = input.uncons_while(|c| c.is_digit(10))?;
-            digits.parse::<u64>().map_err(|e| {
-                <Input::Error as ParseError<char, _, _>>::from_error(input.position(), IntParseError::from(e))
+        .and_then(|digits_str: String| -> Result<u64, Input::Error> {
+            digits_str.parse::<u64>().map_err(|e: ParseIntError| {
+                let stream_error: <Input::Error as ParseError<char, Input::Range, Input::Position>>::StreamError =
+                    StreamError::<char, Input::Range>::other(e);
+                stream_error.into()
             })
-        }))
+        })
 }
-
-
-
-
 
 
 fn concat<Input>() -> impl Parser<Input, Output = Ext>
