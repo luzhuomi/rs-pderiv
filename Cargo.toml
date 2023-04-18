@@ -11,4 +11,3 @@ description = "A regular expression matching library that utilizes partial deriv
 bitvec = "1"
 intmap = "2.0.0"
 combine = "4.6.6"
-# lazy_static = "1.4"
